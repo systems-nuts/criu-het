@@ -128,6 +128,8 @@ bool should_dump_page(VmaEntry *vmae, u64 pme)
 		return true;
 	if ((pme & (PME_PRESENT | PME_SWAP)) && !__page_is_zero(pme))
 		return true;
+	if (vmae->prot & PROT_EXEC)
+		return false;
 
 	return false;
 }

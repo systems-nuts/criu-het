@@ -3,6 +3,8 @@ import argparse
 import sys
 import json
 import os
+from het import get_target_core, get_binary, get_target_files, get_target_mem
+from shutil import copyfile
 
 import pycriu
 
@@ -39,6 +41,74 @@ def decode(opts):
 	json.dump(img, f, indent=indent)
 	if f == sys.stdout:
 		f.write("\n")
+
+from os import listdir
+from os.path import isfile, join
+def get_default_arg(opts, arg, default=""):
+	if opts[arg]:
+		return opts[arg]
+	return default
+
+def recode(opts):
+	arch=get_default_arg(opts, "target", "aarch64")
+	directory=get_default_arg(opts, 'directory', ".")
+	outdir=get_default_arg(opts, 'out', "new_image."+str(arch))
+	print("outdir", outdir)
+	onlyfiles = [f for f in listdir(directory) if isfile(join(directory, f))]
+
+	### To convert we need some files #TODO: use magic to identify the files?
+	pagemap_file=""
+	pages_file=""
+	core_file=""
+	files_file=""
+	mm_file=""
+	for fl in onlyfiles:
+		if "pagemap" in fl:	
+			pagemap_file=os.path.join(directory, fl)
+		if "pages" in fl:	
+			pages_file=os.path.join(directory, fl)
+		if "core" in fl:	
+			core_file=os.path.join(directory, fl)
+		if "files" in  fl:
+			files_file=os.path.join(directory, fl)
+		if "mm" in  fl:
+			mm_file=os.path.join(directory, fl)
+	
+	##get path to binary
+	binary=get_binary(files_file)
+
+	#convert core, fs, memory (vdso)
+	dest_core=get_target_core(arch, binary, pages_file, pagemap_file, core_file)
+	dest_files=get_target_files(files_file) #must be after get_target_core
+	dest_mm, dest_pagemap, dest_pages_path=get_target_mem(mm_file, pagemap_file,  pages_file)
+
+	###Generate output directory
+	if not os.path.exists(outdir):
+    		os.makedirs(outdir)
+	for fl in onlyfiles:
+		if "img" not in fl:
+			continue
+		dst_file=os.path.join(outdir, fl)
+		src_file=os.path.join(directory, fl)
+		if "core" in fl:
+			pycriu.images.dump(dest_core, open(dst_file, "w+"))
+			continue
+		if "mm" in fl:
+			pycriu.images.dump(dest_mm, open(dst_file, "w+"))
+			continue
+		if "pagemap" in fl:
+			pycriu.images.dump(dest_pagemap, open(dst_file, "w+"))
+			continue
+		if "files" in fl:
+			pycriu.images.dump(dest_files, open(dst_file, "w+"))
+			continue
+		if "pages" in fl:
+			copyfile(dest_pages_path, dst_file)
+			continue
+		if "cgroup" in fl:
+			continue #skip
+		#otherwise just copy
+		copyfile(src_file, dst_file)
 
 def encode(opts):
 	img = json.load(inf(opts))
@@ -328,6 +398,21 @@ def main():
 	show_parser.add_argument("in")
 	show_parser.add_argument('--nopl', help = 'do not show entry payload (if exists)', action = 'store_true')
 	show_parser.set_defaults(func=decode, pretty=True, out=None)
+
+
+	# recode
+	recode_parser = subparsers.add_parser('recode',
+			help = 'convert criu images from architecture A to Architecture B')
+	recode_parser.add_argument('-d',
+			    '--directory',
+			help = 'directory containing the images (local by default)')
+	recode_parser.add_argument('-t',
+			    '--target',
+			help = 'target architecture (default: aarch64)')
+	recode_parser.add_argument('-o',
+			    '--out',
+			help = 'path to output dir')
+	recode_parser.set_defaults(func=recode, nopl=False)
 
 	opts = vars(parser.parse_args())
 

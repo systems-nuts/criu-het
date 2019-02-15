@@ -111,7 +111,7 @@ int compel_stop_task(int pid)
 	return ret;
 }
 
-int compel_interrupt_task(int pid)
+static int __compel_interrupt_task(int pid)
 {
 	int ret;
 
@@ -143,6 +143,23 @@ int compel_interrupt_task(int pid)
 	}
 
 	return ret;
+}
+
+#define __HET_CRIU__ 1
+int popcorn_interrrupt_task(int pid);
+
+int compel_interrupt_task(int pid)
+{
+	int ret=0;
+	if(__HET_CRIU__)
+	{
+		ret=popcorn_interrrupt_task(pid);
+		printf("%s ret %d\n", __func__, ret);
+	}
+	else
+		ret=__compel_interrupt_task(pid);
+	return ret;
+
 }
 
 static int skip_sigstop(int pid, int nr_signals)

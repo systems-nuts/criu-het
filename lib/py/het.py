@@ -239,13 +239,39 @@ def get_target_core(architecture, binary, pages_file, pagemap_file, core_file):
 	dst_core=convert_to_dest_core(src_core, dest_regs, dest_tls)
 	return dst_core
 
-def get_binary(files_path):
-	pgm_img=__load_file(files_path)
-	return pgm_img["entries"][0]["reg"]["name"]
+def get_exec_file_id(mm_file):
+	pgm_img=__load_file(mm_file)
+	return pgm_img["entries"][0]["exe_file_id"]
 
-def get_target_files(files_path):
+def __get_binary(files_path, mm_file):
 	pgm_img=__load_file(files_path)
-	path=pgm_img["entries"][0]["reg"]["name"]
+	fid=get_exec_file_id(mm_file)
+	index=0
+	for entry in pgm_img["entries"]:
+		if entry["id"]==fid:
+			return fid, index, entry["reg"]["name"]
+		index+=1
+	return -1, -1, None
+
+def get_binary(files_path, mm_file):
+	fid, idx, path=__get_binary(files_path, mm_file)
+	print "path to file", path
+	return path
+
+def get_all_pids(pstree_file):
+	all_pids=list()
+	pgm_img=__load_file(pstree_file)
+	for entry in pgm_img["entries"]:
+		all_pids.append(entry["pid"])
+	return all_pids
+
+def get_pages_id(pagemap_file):
+	pgm_img=__load_file(pagemap_file)
+	return pgm_img["entries"][0]["pages_id"]
+
+def get_target_files(files_path, mm_file):
+	pgm_img=__load_file(files_path)
+	fid, idx, path=__get_binary(files_path, mm_file)
 	path_x86_64=path+"_x86-64"
 	path_aarch64=path+"_aarch64"
 	assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
@@ -253,7 +279,7 @@ def get_target_files(files_path):
 	copyfile(path_aarch64, path)
 	#set size
 	statinfo = os.stat(path)
-	pgm_img["entries"][0]["reg"]["size"] = statinfo.st_size
+	pgm_img["entries"][idx]["reg"]["size"] = statinfo.st_size
 	#hack: create tmp file; update: on target machine!!
 	#open("/tmp/stack-transform.log", 'a').close()
 
@@ -340,7 +366,7 @@ def __get_vdso_template(region_type):
             "nr_pages": 1, 
             "flags": "PE_PRESENT"}
 	dir_path=os.path.dirname(os.path.realpath(__file__))
-	vdso_path=os.path.join(dir_path, "templates/", "arm_vdso.img")
+	vdso_path=os.path.join(dir_path, "templates/", "arm_vdso.img.tmpl")
 	f=open(vdso_path, "rb")
 	vdso=f.read(PAGE_SIZE)
 	f.close()

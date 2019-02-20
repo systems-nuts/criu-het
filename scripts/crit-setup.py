@@ -1,5 +1,6 @@
 from distutils.core import setup
 
+
 setup(name = "crit",
       version = "0.0.1",
       description = "CRiu Image Tool",
@@ -8,5 +9,6 @@ setup(name = "crit",
       url = "https://github.com/xemul/criu",
       package_dir = {'pycriu': 'lib/py'},
       packages = ["pycriu", "pycriu.images"],
+      package_data={'': ['templates/*.tmpl']},
       scripts = ["crit/crit"]
       )

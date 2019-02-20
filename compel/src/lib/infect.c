@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <linux/seccomp.h>
 
 #include "log.h"
@@ -145,13 +146,12 @@ static int __compel_interrupt_task(int pid)
 	return ret;
 }
 
-#define __HET_CRIU__ 1
 int popcorn_interrrupt_task(int pid);
-
 int compel_interrupt_task(int pid)
 {
 	int ret=0;
-	if(__HET_CRIU__)
+	char *het_env=getenv("HET_CRIU");
+	if(het_env && atoi(het_env))
 	{
 		ret=popcorn_interrrupt_task(pid);
 		printf("%s ret %d\n", __func__, ret);

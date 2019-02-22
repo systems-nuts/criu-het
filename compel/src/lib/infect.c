@@ -151,8 +151,10 @@ int compel_interrupt_task(int pid)
 {
 	int ret=0;
 	char *het_env=getenv("HET_CRIU");
+	printf("HET_CRIU %s\n", het_env);
 	if(het_env && atoi(het_env))
 	{
+		printf("heterogeneous pause!\n");
 		ret=popcorn_interrrupt_task(pid);
 		printf("%s ret %d\n", __func__, ret);
 	}

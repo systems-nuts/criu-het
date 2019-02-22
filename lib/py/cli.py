@@ -6,7 +6,7 @@ import os
 from shutil import copyfile
 
 import pycriu
-from pycriu.het import get_target_core, get_binary, get_target_files, get_target_mem, get_pages_id, get_all_pids
+from pycriu.het import Aarch64Converter, X8664Converter
 
 def inf(opts):
 	if opts['in']:
@@ -42,101 +42,19 @@ def decode(opts):
 	if f == sys.stdout:
 		f.write("\n")
 
-from os import listdir
-from os.path import isfile, join
 def get_default_arg(opts, arg, default=""):
 	if opts[arg]:
 		return opts[arg]
 	return default
-
-def __recode_pid(pid, arch, directory, outdir, onlyfiles):
-	### To convert we need some files #TODO: use magic to identify the files?
-	#TODO: use dict!
-	pagemap_file=""
-	pages_file=""
-	core_file=""
-	files_file=""
-	mm_file=""
-	for fl in onlyfiles:
-		if "files" in  fl: #only one
-			files_file=os.path.join(directory, fl)
-		if str(pid) not in fl:
-			continue
-		if "pagemap" in fl:	
-			pagemap_file=os.path.join(directory, fl)
-		if "core" in fl:	
-			core_file=os.path.join(directory, fl)
-		if "mm" in  fl:
-			mm_file=os.path.join(directory, fl)
-	print(pagemap_file , core_file , files_file , mm_file)
-	assert(pagemap_file and core_file and files_file and mm_file)
-	pages_id=get_pages_id(pagemap_file)
-	for fl in onlyfiles:
-		if "pages-"+str(pages_id) in fl:
-			pages_file=os.path.join(directory, fl)
-	assert(pages_file)
-	
-	##get path to binary
-	binary=get_binary(files_file, mm_file)
-
-	#convert core, fs, memory (vdso)
-	dest_core=get_target_core(arch, binary, pages_file, pagemap_file, core_file)
-	dest_files=get_target_files(files_file, mm_file) #must be after get_target_core
-	dest_mm, dest_pagemap, dest_pages_path=get_target_mem(mm_file, pagemap_file,  pages_file)
-
-	###Generate output directory
-	if not os.path.exists(outdir):
-    		os.makedirs(outdir)
-	#populate with files
-	for fl in onlyfiles:
-		src_file=None
-		if "core" in fl:
-			src_file=core_file
-			dest_img=dest_core
-		if "mm" in fl:
-			src_file=mm_file
-			dest_img=dest_mm
-		if "pagemap" in fl:
-			src_file=pagemap_file
-			dest_img=dest_pagemap
-		if "files" in fl:
-			src_file=files_file
-			dest_img=dest_files
-		if "pages" in fl:
-			src_file=pages_file
-			dest_img=dest_pages_path
-		if not src_file:
-			continue
-		bname=os.path.basename(src_file)
-		dst_file=os.path.join(outdir, bname)
-		if "pages" in fl: #just copy to target file
-			copyfile(dest_img, dst_file)
-		else:
-			pycriu.images.dump(dest_img, open(dst_file, "w+"))
-
 def recode(opts):
 	arch=get_default_arg(opts, "target", "aarch64")
 	directory=get_default_arg(opts, 'directory', ".")
 	outdir=get_default_arg(opts, 'out', "new_image."+str(arch))
-	onlyfiles = [f for f in listdir(directory) if (isfile(join(directory, f)) and "img" in f)]
-	pstree_file=None
-	for fl in onlyfiles:
-		if "pstree" in fl:	
-			pstree_file=os.path.join(directory, fl)
-	assert(pstree_file)
-	for _pid in get_all_pids(pstree_file):
-		__recode_pid(_pid, arch, directory, outdir, onlyfiles)
-	
-	#copy not transformed files
-	for fl in onlyfiles:
-		dst_file=os.path.join(outdir, fl)
-		src_file=os.path.join(directory, fl)
-		#is it healthy to skip cgroup
-		if "cgroup" in fl:
-			continue
-		if ("img" or "core" or "mm" or "pagemap" or "pages" or "cgroup") not in fl:
-			#copy not transformed files:
-			copyfile(src_file, dst_file)
+	if arch == "aarch64":
+		converter = Aarch64Converter()
+	else:
+		converter = X8664Converter()
+	converter.recode(arch, directory, outdir)
 
 def encode(opts):
 	img = json.load(inf(opts))

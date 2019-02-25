@@ -52,7 +52,7 @@ def recode(opts):
 	outdir=get_default_arg(opts, 'out', "new_image."+str(arch))
 	if arch == "aarch64":
 		converter = Aarch64Converter()
-	else:
+	elif arch == "x86_64":
 		converter = X8664Converter()
 	converter.recode(arch, directory, outdir)
 

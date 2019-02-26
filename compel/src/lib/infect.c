@@ -146,7 +146,7 @@ static int __compel_interrupt_task(int pid)
 	return ret;
 }
 
-int popcorn_interrrupt_task(int pid);
+int popcorn_interrrupt_task(int pid, char* target_str);
 int compel_interrupt_task(int pid)
 {
 	int ret=0;

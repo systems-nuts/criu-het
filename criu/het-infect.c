@@ -201,7 +201,7 @@ int get_target_id(char* target_str)
 		return 0;
 	if(strcmp(target_str, "x86_64"))
 		return 1;
-	printf("WARN: Unknown architecture %s. defaulting to aarch64\n", target_str)
+	printf("WARN: Unknown architecture %s. defaulting to aarch64\n", target_str);
 	return 0;
 }
 
@@ -221,7 +221,7 @@ int popcorn_interrrupt_task(int pid, char* target_str)
 	int target_id = get_target_id(target_str);
 	ret = __popcorn_interrrupt_task(pid);
 	addr = get_sym_addr(bin_file, MIGRATION_GBL_VARIABLE);
-	ret |= __popcorn_wait_task(pid, addr, target);
+	ret |= __popcorn_wait_task(pid, addr, target_id);
 	return ret;
 }
 

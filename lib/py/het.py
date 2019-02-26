@@ -552,7 +552,7 @@ class X8664Converter(Converter):
 				trgn=translate[grn]
 			reg_dict[trgn]=getattr(dest_regs, grn)
 		reg_dict["ip"]=dest_regs.rip
-		reg_dict["flags"]=dest_regs.rflags
+		reg_dict["flags"]=dest_regs.rflags #0x206 or 0x202?
 		reg_dict["orig_ax"]=dest_regs.rax #FIXME: to check
 		#reg_dict["fs_base"]=hex(dest_tls) #"0x821460" #FIXME!!!
 		reg_dict["fs_base"]=hex(int(src_info["clear_tid_addr"],16)-56) #"0x821460" #FIXME!!!
@@ -566,6 +566,9 @@ class X8664Converter(Converter):
 			if grn in translate.keys():
 				trgn=translate[grn]
 			reg_dict[trgn]=getattr(dest_regs, grn)
+		reg_dict["ss"]="0x2b"
+		reg_dict["cs"]="0x33"
+		reg_dict["mode"]="NATIVE"
 
 		print(reg_dict)
 		dst_info["gpregs"]=reg_dict
@@ -797,7 +800,7 @@ class X8664Converter(Converter):
 		ordered_dict_prepend(pgm_img['entries'][0], 'mtype', "X86_64")
 
 		#convert tc
-		pgm_img['entries'][0]['tc']['cg_set'] = 2
+		#pgm_img['entries'][0]['tc']['cg_set'] = 2
 		pgm_img['entries'][0]['tc']['loginuid'] = 1003
 		pgm_img['entries'][0]['tc']['rlimits']["rlimits"] = self.__get_rlimits()
 		pgm_img['entries'][0]['thread_core']['creds']['uid'] = 1003

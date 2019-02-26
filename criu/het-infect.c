@@ -142,18 +142,16 @@ static int __popcorn_interrrupt_task(int pid)
 
 #endif
 
-static int __popcorn_wait_task(int pid, long addr)
+static int __popcorn_wait_task(int pid, long addr, int target_id)
 {
 	int ret;
-	#define TARGET_ARCHITECTURE 0 //FIXME
-
 
 	//first wait we assume SIGTRAP: todo check!
     	wait(NULL);
     	printf("The process stopped a first time %d, %lx\n", pid, addr);
 
 	/* Put one in the variable */
-	ret=putdata(pid, addr, TARGET_ARCHITECTURE);
+	ret=putdata(pid, addr, target_id);
 	if(ret) perror("putdata");
 
 	//cont. interrupt
@@ -197,9 +195,18 @@ err:
 	return -1;
 }
 
+int get_target_id(char* target_str)
+{
+	if(strcmp(target_str, "aarch64"))
+		return 0;
+	if(strcmp(target_str, "x86_64"))
+		return 1;
+	printf("WARN: Unknown architecture %s. defaulting to aarch64\n", target_str)
+	return 0;
+}
 
 #define MIGRATION_GBL_VARIABLE "__migrate_gb_variable"
-int popcorn_interrrupt_task(int pid)
+int popcorn_interrrupt_task(int pid, char* target_str)
 {
 	int ret = 0;
 	long addr;
@@ -211,9 +218,10 @@ int popcorn_interrrupt_task(int pid)
 		pr_warn("Unable to read bin path");
 		exit(-1);
 	}
+	int target_id = get_target_id(target_str);
 	ret = __popcorn_interrrupt_task(pid);
 	addr = get_sym_addr(bin_file, MIGRATION_GBL_VARIABLE);
-	ret |= __popcorn_wait_task(pid, addr);
+	ret |= __popcorn_wait_task(pid, addr, target);
 	return ret;
 }
 

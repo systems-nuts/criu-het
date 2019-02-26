@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/user.h>
-#include <sys/reg.h>
 #include <fcntl.h>
 #include "util.h"
 #include <compel/compel.h>

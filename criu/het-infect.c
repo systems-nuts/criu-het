@@ -147,7 +147,7 @@ static int __popcorn_wait_task(int pid, long addr, int target_id)
 
 	//first wait we assume SIGTRAP: todo check!
     	wait(NULL);
-    	printf("The process stopped a first time %d, %lx\n", pid, addr);
+    	printf("The process stopped a first time pid %d; addr %lx; target arch %d\n", pid, addr, target_id);
 
 	/* Put one in the variable */
 	ret=putdata(pid, addr, target_id);
@@ -196,9 +196,9 @@ err:
 
 int get_target_id(char* target_str)
 {
-	if(strcmp(target_str, "aarch64"))
+	if(!strcmp(target_str, "aarch64"))
 		return 0;
-	if(strcmp(target_str, "x86_64"))
+	if(!strcmp(target_str, "x86_64"))
 		return 1;
 	printf("WARN: Unknown architecture %s. defaulting to aarch64\n", target_str);
 	return 0;

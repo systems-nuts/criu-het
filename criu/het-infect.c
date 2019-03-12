@@ -3,6 +3,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/user.h>
@@ -13,14 +14,23 @@
 const int long_size = sizeof(int);
 long getdata(pid_t pid, long addr)
 {   
-	printf("%s: pid %d addr %ld\n", __func__, pid, addr);
+	pr_info("%s: pid %d addr %ld\n", __func__, pid, addr);
 	return ptrace(PTRACE_PEEKDATA, pid, addr, NULL);
 }
 
 int putdata(pid_t pid, long addr, long data)
 {
-	printf("%s: pid %d addr %ld data %ld\n", __func__, pid, addr, data);
+	pr_info("%s: pid %d addr %ld data %ld\n", __func__, pid, addr, data);
 	return ptrace(PTRACE_POKEDATA, pid, addr, (void*) data);
+}
+
+int cfileexists(const char* filename){
+    struct stat buffer;
+    int exist = stat(filename,&buffer);
+    if(exist == 0)
+        return 0;
+    else // -1
+        return 0;
 }
 
 /*****************************************************************/
@@ -29,19 +39,28 @@ long get_sym_addr(char* bin_file, char* sym)
 	FILE *fp;
 	char buff[256];
 	char cmd[128];
+	char nm_path[]="/usr/bin/nm";
+
+	if(cfileexists(nm_path))
+	{
+		pr_warn("NM Binary not found");
+		return -1;
+	}else
+		pr_info("NM Binary exist %s\n", nm_path);
 
 	/* Open the command for reading. */
-	sprintf(cmd, "/usr/bin/nm %s", bin_file);
+	sprintf(cmd, "%s %s", nm_path, bin_file);
 	fp = popen(cmd, "r");
 	if (fp == NULL) {
-		printf("Failed to run command\n" );
-		exit(1);
+		pr_info("Failed to run command\n" );
+		return -1;
 	}
 
 	char* addr_str=NULL;
 	char* name;
 	/* Read the output a line at a time - output it. */
 	while (fgets(buff, sizeof(buff)-1, fp) != NULL) {
+		pr_info("current symbol %s", buff);
 		addr_str = strtok(buff, " ");
 		strtok(NULL, " ");//skip type
 		name = strtok(NULL, " ");
@@ -69,6 +88,7 @@ static char* get_binary_path(int pid)
 	ret = readlink(exe_path, binary_path, MAXPATH);
 	if(ret<=0)
 		return NULL;
+	binary_path[ret]='\0';
 	return binary_path;
 }
 
@@ -90,20 +110,20 @@ static int __popcorn_interrrupt_task(int pid)
 	}
 
 	 wait(NULL);
-	 printf("The process stopped a first time %d, %lx\n", pid, addr);
+	 pr_info("The process stopped a first time %d, %lx\n", pid, addr);
 
 	 /* Put one in the variable */
 	 putdata(pid, addr, 1);
 	 ret_data = getdata(pid, addr);
-	 printf("ret data %ld\n", ret_data);
+	 pr_info("ret data %ld\n", ret_data);
 
 	 /* Cont. for the process to do stack transformation */
 	 ptrace(PTRACE_CONT, pid, NULL, NULL);
 	 /* Wait stack transformation: alarm */
 	 wait(NULL);
-	 printf("The process stopped a second time\n");
+	 pr_info("The process stopped a second time\n");
 	 ret_data = getdata(pid, addr);
-	 printf("ret data %ld\n", ret_data);
+	 pr_info("ret data %ld\n", ret_data);
 
 	 ret=ptrace(PTRACE_CONT, pid, NULL, NULL);
 	 ret|=ptrace(PTRACE_DETACH, pid,
@@ -147,7 +167,7 @@ static int __popcorn_wait_task(int pid, long addr, int target_id)
 
 	//first wait we assume SIGTRAP: todo check!
     	wait(NULL);
-    	printf("The process stopped a first time pid %d; addr %lx; target arch %d\n", pid, addr, target_id);
+    	pr_info("The process stopped a first time pid %d; addr %lx; target arch %d\n", pid, addr, target_id);
 
 	/* Put one in the variable */
 	ret=putdata(pid, addr, target_id);
@@ -155,7 +175,7 @@ static int __popcorn_wait_task(int pid, long addr, int target_id)
 
 	//cont. interrupt
 	if (ptrace(PTRACE_CONT, pid, NULL, NULL)) {
-		printf("Can't continue");
+		pr_info("Can't continue");
 	}
 	
 	int status=0;
@@ -173,14 +193,14 @@ static int __popcorn_wait_task(int pid, long addr, int target_id)
 				break;
 			}else 
 				if (ptrace(PTRACE_CONT, pid, NULL, (void*)(long)sig)) {
-					printf("Can't continue");
+					pr_info("Can't continue");
 				}
 		}
 	}while(1);
 
 	//cont. interrupt
 	if (ptrace(PTRACE_CONT, pid, NULL, NULL)) {
-		printf("Can't continue");
+		pr_info("Can't continue");
 	}
 	ret = ptrace(PTRACE_INTERRUPT, pid, NULL, NULL);
 	if (ret < 0) {
@@ -200,9 +220,10 @@ int get_target_id(char* target_str)
 		return 0;
 	if(!strcmp(target_str, "x86_64"))
 		return 1;
-	printf("WARN: Unknown architecture %s. defaulting to aarch64\n", target_str);
+	pr_info("WARN: Unknown architecture %s. defaulting to aarch64\n", target_str);
 	return 0;
 }
+
 
 #define MIGRATION_GBL_VARIABLE "__migrate_gb_variable"
 int popcorn_interrrupt_task(int pid, char* target_str)
@@ -215,8 +236,16 @@ int popcorn_interrrupt_task(int pid, char* target_str)
 	if(!bin_file)
 	{
 		pr_warn("Unable to read bin path");
-		exit(-1);
+		return -1;
 	}
+	
+	pr_info("binary path of process %d is %s\n", pid, bin_file);
+	if(cfileexists(bin_file))
+	{
+		pr_warn("Binary file not found");
+		return -1;
+	}else
+		pr_info("Binary file exist %s\n", bin_file);
 	int target_id = get_target_id(target_str);
 	ret = __popcorn_interrrupt_task(pid);
 	addr = get_sym_addr(bin_file, MIGRATION_GBL_VARIABLE);

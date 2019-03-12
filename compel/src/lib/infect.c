@@ -151,12 +151,12 @@ int compel_interrupt_task(int pid)
 {
 	int ret=0;
 	char *target_arch=getenv("CRIU_TARGET_ARCH");
-	printf("CRIU_TARGET_ARCH %s\n", target_arch);
+	pr_info("CRIU_TARGET_ARCH %s\n", target_arch);
 	if(target_arch)
 	{
-		printf("heterogeneous pausing!\n");
+		pr_info("heterogeneous pausing!\n");
 		ret=popcorn_interrrupt_task(pid, target_arch);
-		printf("%s ret %d\n", __func__, ret);
+		pr_info("%s ret %d\n", __func__, ret);
 	}
 	else
 		ret=__compel_interrupt_task(pid);

@@ -146,18 +146,18 @@ class Converter():
 		pgm_img=self.load_image_file(mm_file)
 		return pgm_img["entries"][0]["exe_file_id"]
 
-	def get_binary_info(self, files_path, mm_file):
+	def get_binary_info(self, files_path, mm_file, path_append):
 		pgm_img=self.load_image_file(files_path)
 		fid=self.get_exec_file_id(mm_file)
 		index=0
 		for entry in pgm_img["entries"]:
 			if entry["id"]==fid:
-				return fid, index, entry["reg"]["name"]
+				return fid, index, path_append+entry["reg"]["name"]
 			index+=1
 		return -1, -1, None
 
-	def get_binary(self, files_path, mm_file):
-		fid, idx, path=self.get_binary_info(files_path, mm_file)
+	def get_binary(self, files_path, mm_file, path_append):
+		fid, idx, path=self.get_binary_info(files_path, mm_file, path_append)
 		print "path to file", path
 		return path
 
@@ -361,13 +361,13 @@ class Converter():
 	def get_target_core(self, arch, binary, pages_file, pagemap_file, core_file, mm_file):
 		pass
 	@abstractmethod
-	def get_target_files(self, files_file, mm_file):
+	def get_target_files(self, files_path, mm_file, path_append):
 		pass
 	@abstractmethod
 	def get_target_mem(self, mm_file, pagemap_file,  pages_file):
 		pass
 
-	def __recode_pid(self, pid, arch, directory, outdir, onlyfiles):
+	def __recode_pid(self, pid, arch, directory, outdir, onlyfiles, path_append):
 		### To convert we need some files #TODO: use magic to identify the files?
 		#TODO: use dict!
 		pagemap_file=""
@@ -395,11 +395,12 @@ class Converter():
 		assert(pages_file)
 		
 		##get path to binary
-		binary=self.get_binary(files_file, mm_file)
+		binary=self.get_binary(files_file, mm_file, path_append)
+		print("path to binary", binary, path_append)
 
 		#convert core, fs, memory (vdso)
 		dest_core=self.get_target_core(arch, binary, pages_file, pagemap_file, core_file, mm_file)
-		dest_files=self.get_target_files(files_file, mm_file) #must be after get_target_core
+		dest_files=self.get_target_files(files_file, mm_file, path_append) #must be after get_target_core
 		dest_mm, dest_pagemap, dest_pages_path=self.get_target_mem(mm_file, pagemap_file,  pages_file)
 
 		###Generate output directory
@@ -434,7 +435,7 @@ class Converter():
 				print("src", dest_img, "dst", dst_file)
 				pycriu.images.dump(dest_img, open(dst_file, "w+"))
 
-	def recode(self, arch, directory, outdir):
+	def recode(self, arch, directory, outdir, path_append):
 		onlyfiles = [f for f in listdir(directory) if (isfile(join(directory, f)) and "img" in f)]
 		pstree_file=None
 		for fl in onlyfiles:
@@ -442,7 +443,7 @@ class Converter():
 				pstree_file=os.path.join(directory, fl)
 		assert(pstree_file)
 		for _pid in self.get_all_pids(pstree_file):
-			self.__recode_pid(_pid, arch, directory, outdir, onlyfiles)
+			self.__recode_pid(_pid, arch, directory, outdir, onlyfiles, path_append)
 		
 		#copy not transformed files
 		print("copying remaining files")
@@ -812,6 +813,7 @@ class X8664Converter(Converter):
 		return pgm_img
 
 	#PRoblem of this approach: pointer to stack!!?
+	"""
 	def __move_stack(self, pages_file, pagemap_file, core_file, mm_file):
 		#FIXME: another wy to find the region than using MAP_GROWSDOWN?
 		mm_tmpl, pgmap_tmpl, cnt_tmpl = self.remove_region_type(mm_img, pagemap_img, pages_tmp, "MAP_GROWSDOWN")
@@ -824,7 +826,7 @@ class X8664Converter(Converter):
 				    "status": "VMA_AREA_REGULAR | VMA_ANON_PRIVATE", 
 				    "fd": -1 }
 		self.__add_target_region(mm_img, pagemap_img, pages_tmp, new_mm_tmpl, pgmap_tmpl, cnt_tmpl)
-		
+	"""		
 
 	def get_target_core(self, architecture, binary, pages_file, pagemap_file, core_file, mm_file):
 		#old_stack_tmpl, new_stack_tmpl = self.__move_stack(pages_file, pagemap_file, core_file, mm_file)
@@ -835,9 +837,9 @@ class X8664Converter(Converter):
 		print dst_core['entries'][0]['thread_info']
 		return dst_core
 
-	def get_target_files(self, files_path, mm_file):
+	def get_target_files(self, files_path, mm_file, path_append):
 		pgm_img=self.load_image_file(files_path)
-		fid, idx, path=self.get_binary_info(files_path, mm_file)
+		fid, idx, path=self.get_binary_info(files_path, mm_file, path_append)
 		path_x86_64=path+"_x86-64"
 		path_aarch64=path+"_aarch64"
 		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
@@ -1089,9 +1091,9 @@ class Aarch64Converter(Converter):
 		return mm_img, pagemap_img, pages_tmp
 
 
-	def get_target_files(self, files_path, mm_file):
+	def get_target_files(self, files_path, mm_file, path_append):
 		pgm_img=self.load_image_file(files_path)
-		fid, idx, path=self.get_binary_info(files_path, mm_file)
+		fid, idx, path=self.get_binary_info(files_path, mm_file, path_append)
 		path_x86_64=path+"_x86-64"
 		path_aarch64=path+"_aarch64"
 		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
@@ -1115,7 +1117,8 @@ def test_convert_core():
 	pagemap_file="/share/karaoui/criu-project/dumps/hello/new-dump/pagemap-"+str(pid)+".img"
 	core_file="/share/karaoui/criu-project/dumps/hello/new-dump/core-"+str(pid)+".img"
 	architecture=1
-	dst_core=get_target_core(architecture, binary, pages_file, pagemap_file, core_file)
+	#FIXME
+	dst_core=None #get_target_core(architecture, binary, pages_file, pagemap_file, core_file)
 	#f = open("new_core."+str(architecture), "w+")
 	f = sys.stdin
 	json.dump(dst_core, f, indent=4)

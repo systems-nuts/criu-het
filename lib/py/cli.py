@@ -50,11 +50,12 @@ def recode(opts):
 	arch=get_default_arg(opts, "target", "aarch64")
 	directory=get_default_arg(opts, 'directory', ".")
 	outdir=get_default_arg(opts, 'out', "new_image."+str(arch))
+	path_append=get_default_arg(opts, 'append', "")
 	if arch == "aarch64":
 		converter = Aarch64Converter()
 	elif arch == "x86_64":
 		converter = X8664Converter()
-	converter.recode(arch, directory, outdir)
+	converter.recode(arch, directory, outdir, path_append)
 
 def encode(opts):
 	img = json.load(inf(opts))
@@ -355,6 +356,9 @@ def main():
 	recode_parser.add_argument('-t',
 			    '--target',
 			help = 'target architecture (default: aarch64)')
+	recode_parser.add_argument('-a',
+			    '--append',
+			help = 'append path to file names (default: "") ')
 	recode_parser.add_argument('-o',
 			    '--out',
 			help = 'path to output dir')

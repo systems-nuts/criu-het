@@ -3,15 +3,15 @@
 all_args="$*"
 host=$(uname -m)
 
-target=""
-outdir=""
+target_arch=""
+outdir="."
 _options=()
+_help=0
 while [ "$#" -gt 0 ]
 do
         case "$1" in
-        -t)
-		target=$2
-                shift
+        --arch)
+		target_arch=$2
                 shift
                 ;;
 	-D|--image-dir)
@@ -19,41 +19,57 @@ do
 	        _options+=("$1")
 	        _options+=("$2")
                 shift
-                shift
+                ;;
+        -h|--help)
+		_help=1
                 ;;
         # an option argument, continue
         *)      
 	      _options+=("$1")
-              shift
               ;;
         esac
         shift
 done
 
-options="${options[@]}"
+if [ "$_help" = "1" ]
+then
+	echo "[criu-het has the same usage as criu except for the add option --arch (see below)]"
+	criu -h
+	echo -e "  --arch architecture\tthis option create an additional folder containing \n  \t\t\tthe target architecture dump (x86_64 or aarch64)"
+	exit
+fi
+
+options="${_options[@]}"
+echo "All options:" $options
 
 function local_checkpoint()
 {
+	options=$1
 	echo "executing criu with params: $options"
 	criu $options
 }
 
 function het_checkpoint()
 {
-	export CRIU_TARGET_ARCH=$target
-	echo "executing criu with params: $*"
-	criu $option
+	options=$1
+	target_arch=$2
+	outdir=$3
+
+	export CRIU_TARGET_ARCH=$target_arch
+	echo "executing criu with params: $options"
+
+	criu $options
 	if [ -z $outdir ]; then
-		target_outdir=$target
+		target_outdir=$target_arch
 	else
-		target_outdir=$outdir/$target
+		target_outdir=$outdir/$target_arch
 	fi
-	crit recode -t $target -d $outdir -o $target_outdir 
+	crit recode -t $target_arch -d $outdir -o $target_outdir 
 }
 
-if [ -z $target || "$target" = "$host" ]
+if [ -z $target_arch ] || [ "$target_arch" = "$host" ]
 then
-	local_checkpoint
+	local_checkpoint "$options"
 else
-	het_checkpoint $target
+	het_checkpoint "$options" $target_arch "$outdir"
 fi

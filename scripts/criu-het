@@ -1,0 +1,7 @@
+#!/bin/bash
+
+
+export CRIU_TARGET_ARCH=aarch64
+echo "executing criu with params: $*"
+echo "executing criu with params: $*" >&2
+criu.x $*

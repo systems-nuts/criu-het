@@ -45,6 +45,11 @@ install-compel: $(compel-install-targets)
 	$(Q) $(MAKE) $(build)=compel/plugins install
 .PHONY: install-compel
 
+install-het: 
+	$(Q) cp $(SBINDIR)/criu $(SBINDIR)/criu.x
+	$(Q) install ./script/criu-het $(SBINDIR)/criu
+.PHONY: install-het
+
 install: install-man install-lib install-criu install-compel ;
 .PHONY: install
 

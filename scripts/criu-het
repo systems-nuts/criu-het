@@ -1,7 +1,59 @@
 #!/bin/bash
 
+all_args="$*"
+host=$(uname -m)
 
-export CRIU_TARGET_ARCH=aarch64
-echo "executing criu with params: $*"
-echo "executing criu with params: $*" >&2
-criu.x $*
+target=""
+outdir=""
+_options=()
+while [ "$#" -gt 0 ]
+do
+        case "$1" in
+        -t)
+		target=$2
+                shift
+                shift
+                ;;
+	-D|--image-dir)
+		outdir=$2
+	        _options+=("$1")
+	        _options+=("$2")
+                shift
+                shift
+                ;;
+        # an option argument, continue
+        *)      
+	      _options+=("$1")
+              shift
+              ;;
+        esac
+        shift
+done
+
+options="${options[@]}"
+
+function local_checkpoint()
+{
+	echo "executing criu with params: $options"
+	criu $options
+}
+
+function het_checkpoint()
+{
+	export CRIU_TARGET_ARCH=$target
+	echo "executing criu with params: $*"
+	criu $option
+	if [ -z $outdir ]; then
+		target_outdir=$target
+	else
+		target_outdir=$outdir/$target
+	fi
+	crit recode -t $target -d $outdir -o $target_outdir 
+}
+
+if [ -z $target || "$target" = "$host" ]
+then
+	local_checkpoint
+else
+	het_checkpoint $target
+fi

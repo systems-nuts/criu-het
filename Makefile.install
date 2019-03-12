@@ -46,11 +46,10 @@ install-compel: $(compel-install-targets)
 .PHONY: install-compel
 
 install-het: 
-	$(Q) cp $(SBINDIR)/criu $(SBINDIR)/criu.x
-	$(Q) install ./script/criu-het $(SBINDIR)/criu
+	$(Q) install ./script/criu-het $(SBINDIR)
 .PHONY: install-het
 
-install: install-man install-lib install-criu install-compel ;
+install: install-man install-lib install-criu install-compel install-het ;
 .PHONY: install
 
 uninstall:

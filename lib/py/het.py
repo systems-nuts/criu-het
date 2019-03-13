@@ -15,6 +15,9 @@ from abc import ABCMeta, abstractmethod
 
 PAGE_SIZE=4096
 
+def het_log(*args):
+	pass
+
 class Reg64(Structure):
 	_fields_ = [("x", c_ulonglong)]
 class Reg128(Structure):
@@ -59,7 +62,7 @@ class Converter():
 		###find address of the structure
 		e = ELF(binary)
 		addr=long(e.symbols[symbol]) 
-		print "found address", hex(addr)
+		het_log("found address", hex(addr))
 		return addr
 
 	def load_image_file(self, file_path):
@@ -81,12 +84,12 @@ class Converter():
 				base = long(dc['vaddr'], 16)
 				pnbr = dc['nr_pages']
 				end = base+(pnbr*PAGE_SIZE)
-				print "current region", hex(base), hex(end), pnbr
+				het_log("current region", hex(base), hex(end), pnbr)
 				if addr>=base and addr<end:
 					region_offset=(addr-base)
 					region_offset+=(page_number*PAGE_SIZE)
-					print "found in region", hex(base), hex(addr), hex(end)
-					print "page offset",  region_offset
+					het_log("found in region", hex(base), hex(addr), hex(end))
+					het_log("page offset",  region_offset)
 					break
 				page_number+=pnbr
 
@@ -98,12 +101,12 @@ class Converter():
 		fd.seek(region_offset)
 		dest_regs = struct_def()
 
-		#print "reading", fd.read(-1) 
+		#het_log "reading", fd.read(-1) 
 		#return
 		ret=fd.readinto(dest_regs) 
-		print "size", sizeof(dest_regs), "ret", ret
-		print "magic", hex(dest_regs.magic)
-		#print dest_regs
+		het_log("size", sizeof(dest_regs), "ret", ret)
+		het_log("magic", hex(dest_regs.magic))
+		#het_log dest_regs
 		return dest_regs
 
 	def read_llong_from_pages(self, pages_file, region_offset):
@@ -120,7 +123,7 @@ class Converter():
 
 		region_offset=self.get_pages_offset(addr, pagemap_file)
 		if(region_offset==-1):
-			print "addr region not found"
+			het_log("addr region not found")
 			return
 
 		return self.read_struct_from_pages(pages_file, region_offset, struct_def)
@@ -130,11 +133,11 @@ class Converter():
 
 		region_offset=self.get_pages_offset(addr, pagemap_file)
 		if(region_offset==-1):
-			print "addr region not found"
+			het_log("addr region not found")
 			return
 
 		tls_addr=self.read_llong_from_pages(pages_file, region_offset)
-		print "!!!!tls_base", hex(tls_addr)
+		het_log("!!!!tls_base", hex(tls_addr))
 		return tls_addr
 
 
@@ -158,7 +161,7 @@ class Converter():
 
 	def get_binary(self, files_path, mm_file, path_append):
 		fid, idx, path=self.get_binary_info(files_path, mm_file, path_append)
-		print "path to file", path
+		het_log("path to file", path)
 		return path
 
 	def get_all_pids(self, pstree_file):
@@ -192,17 +195,17 @@ class Converter():
 			if region_type in vma["status"]:
 				region_start=int(vma["start"], 16)
 				region_end=int(vma["end"], 16)
-				print("removing vma",mm_img["entries"][0]["vmas"][idx])
+				het_log("removing vma",mm_img["entries"][0]["vmas"][idx])
 				ret_mm = copy.deepcopy(mm_img["entries"][0]["vmas"][idx])
 				del mm_img["entries"][0]["vmas"][idx]
 				break
 			idx+=1
 
 		if region_start==-1:
-			print("no region found")
+			het_log("no region found")
 			return None, None, None
 
-		print(hex(region_start), hex(region_end))
+		het_log(hex(region_start), hex(region_end))
 		
 		#pagemap
 		idx=0
@@ -218,7 +221,7 @@ class Converter():
 			page_nbr = pgmap['nr_pages']
 			if addr >= region_start and addr <= region_end:
 				found=True
-				print("removing pagemap", pagemap_img["entries"][idx])
+				het_log("removing pagemap", pagemap_img["entries"][idx])
 				ret_pmap = copy.deepcopy(pagemap_img["entries"][idx])
 				del pagemap_img["entries"][idx]
 				break
@@ -228,7 +231,7 @@ class Converter():
 
 		if(found):
 			original_size=os.stat(pages_path).st_size
-			print("orginal size", pages_path, original_size, page_nbr)
+			het_log("orginal size", pages_path, original_size, page_nbr)
 			page_offset=page_start_nbr*PAGE_SIZE
 			cnt_size=(page_nbr*PAGE_SIZE)
 			page_offset_end=page_offset+cnt_size
@@ -250,7 +253,7 @@ class Converter():
 
 			#truncate file
 			new_size=original_size-(page_offset_end-page_offset)
-			print(original_size, new_size)
+			het_log(original_size, new_size)
 			page_tmp.truncate(new_size)
 			page_tmp.close()
 
@@ -258,7 +261,7 @@ class Converter():
 
 
 	def __add_target_region(self, mm_img, pagemap_img, pages_path, mm_tmpl, pgmap_tmpl, cnt_tmpl):
-		print("adding", mm_tmpl)
+		het_log("adding", mm_tmpl)
 
 		#insert_vma
 		region_start=int(mm_tmpl["start"], 16)
@@ -275,11 +278,11 @@ class Converter():
 					prev_vma=mm_img["entries"][0]["vmas"][idx-1]
 					pvend=int(prev_vma["end"],16)
 					if(pvend > region_start):
-						print("error: could not insert region", hex(vma_start), hex(vma_end), hex(region_start), hex(region_end), hex(pvend))
+						het_log("error: could not insert region", hex(vma_start), hex(vma_end), hex(region_start), hex(region_end), hex(pvend))
 						return
 				break
 			idx+=1
-		print("found vma at idx", idx, len(vmas))
+		het_log("found vma at idx", idx, len(vmas))
 		mm_img["entries"][0]["vmas"]=vmas[:idx]+[mm_tmpl]+vmas[idx:]
 
 		#insert pgmap if any
@@ -303,13 +306,13 @@ class Converter():
 			page_nbr = pgmap['nr_pages']
 			addr_end=addr+(page_nbr*PAGE_SIZE)
 			if addr >= target_vaddr:
-				print("pagemap found spot")
+				het_log("pagemap found spot")
 				#insert before this regions
 				break
 			idx+=1
 			page_start_nbr+=page_nbr
-		print("found page at idx", idx, len(pages_list))
-		print("found page at idx", pgmap_tmpl , pages_list[idx:])
+		het_log("found page at idx", idx, len(pages_list))
+		het_log("found page at idx", pgmap_tmpl , pages_list[idx:])
 		assert(page_nbr!=-1)
 		pagemap_img["entries"]=pages_list[:idx]+[pgmap_tmpl]+pages_list[idx:]
 
@@ -317,7 +320,7 @@ class Converter():
 		original_size=os.stat(pages_path).st_size
 		page_offset=page_start_nbr*PAGE_SIZE#+(page_nbr*PAGE_SIZE)
 		buff_size=(target_nbr*PAGE_SIZE)
-		print("orginal size", pages_path, original_size,target_nbr, page_offset)
+		het_log("orginal size", pages_path, original_size,target_nbr, page_offset)
 
 		#insert in pages
 		page_tmp=open(pages_path, "r+b")
@@ -325,7 +328,7 @@ class Converter():
 		buff=page_tmp.read(original_size-page_offset)
 		
 		page_tmp.seek(page_offset)
-		print(buff_size, len(cnt_tmpl))
+		het_log(buff_size, len(cnt_tmpl))
 		assert(buff_size == len(cnt_tmpl))
 		page_tmp.write(cnt_tmpl)#, buff_size)
 		page_tmp.write(buff) #, original_size-page_offset_end)
@@ -386,7 +389,7 @@ class Converter():
 				core_file=os.path.join(directory, fl)
 			if "mm" in  fl:
 				mm_file=os.path.join(directory, fl)
-		print(pagemap_file , core_file , files_file , mm_file)
+		het_log(pagemap_file , core_file , files_file , mm_file)
 		assert(pagemap_file and core_file and files_file and mm_file)
 		pages_id=self.get_pages_id(pagemap_file)
 		for fl in onlyfiles:
@@ -396,7 +399,7 @@ class Converter():
 		
 		##get path to binary
 		binary=self.get_binary(files_file, mm_file, path_append)
-		print("path to binary", binary, path_append)
+		het_log("path to binary", binary, path_append)
 
 		#convert core, fs, memory (vdso)
 		dest_core=self.get_target_core(arch, binary, pages_file, pagemap_file, core_file, mm_file)
@@ -429,10 +432,10 @@ class Converter():
 			bname=os.path.basename(src_file)
 			dst_file=os.path.join(outdir, bname)
 			if "pages" in fl: #just copy to target file
-				print("src", dest_img, "dst", dst_file)
+				het_log("src", dest_img, "dst", dst_file)
 				copyfile(dest_img, dst_file)
 			else:
-				print("src", dest_img, "dst", dst_file)
+				het_log("src", dest_img, "dst", dst_file)
 				pycriu.images.dump(dest_img, open(dst_file, "w+"))
 
 	def recode(self, arch, directory, outdir, path_append):
@@ -446,19 +449,19 @@ class Converter():
 			self.__recode_pid(_pid, arch, directory, outdir, onlyfiles, path_append)
 		
 		#copy not transformed files
-		print("copying remaining files")
+		het_log("copying remaining files")
 		for fl in onlyfiles:
-			print("copying...", fl)
+			het_log("copying...", fl)
 			dst_file=os.path.join(outdir, fl)
 			src_file=os.path.join(directory, fl)
 			#is it healthy to skip cgroup
 			special_files=["files" , "core" , "mm" , "pagemap" , "pages"] #, "cgroup"]
 			if any(s in fl for s in special_files):
-				print("skipped", fl)
+				het_log("skipped", fl)
 			else:
 				#copy not transformed files:
 				copyfile(src_file, dst_file)
-				print("done", fl)
+				het_log("done", fl)
 		
 	
 class X8664Converter(Converter):
@@ -534,7 +537,7 @@ class X8664Converter(Converter):
 
 
 	def convert_to_dest_core(self, pgm_img, dest_regs, dest_tls): #, old_stack_tmpl, new_stack_tmpl):
-		print("Magic", dest_regs.magic) #TODO: check
+		het_log("Magic", dest_regs.magic) #TODO: check
 
 		###convert the type
 		pgm_img['entries'][0]['mtype']="X86_64"
@@ -557,7 +560,7 @@ class X8664Converter(Converter):
 		reg_dict["orig_ax"]=dest_regs.rax #FIXME: to check
 		#reg_dict["fs_base"]=hex(dest_tls) #"0x821460" #FIXME!!!
 		reg_dict["fs_base"]=hex(int(src_info["clear_tid_addr"],16)-56) #"0x821460" #FIXME!!!
-		print("fs_base", reg_dict["fs_base"])
+		het_log("fs_base", reg_dict["fs_base"])
 		reg_dict["gs_base"]="0x0"
 
 		#csregs
@@ -571,11 +574,11 @@ class X8664Converter(Converter):
 		reg_dict["cs"]="0x33"
 		reg_dict["mode"]="NATIVE"
 
-		print(reg_dict)
+		het_log(reg_dict)
 		dst_info["gpregs"]=reg_dict
 
 		##fpregs
-		print("WARNING: floating point registers not fully supported")
+		het_log("WARNING: floating point registers not fully supported")
 		dst_info["fpregs"]= {
                     "cwd": 895,
                     "swd": 0,
@@ -809,7 +812,7 @@ class X8664Converter(Converter):
 		pgm_img['entries'][0]['thread_core']['creds']['suid'] = 1003
 		pgm_img['entries'][0]['thread_core']['creds']['fsuid'] = 1003
 		
-		print(pgm_img)
+		het_log(pgm_img)
 		return pgm_img
 
 	#PRoblem of this approach: pointer to stack!!?
@@ -834,7 +837,7 @@ class X8664Converter(Converter):
 		dest_tls=self.read_tls_from_memory(binary, architecture, pagemap_file, pages_file)
 		src_core=self.get_src_core(core_file)
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)#, old_stack_tmpl, new_stack_tmpl)
-		print dst_core['entries'][0]['thread_info']
+		het_log(dst_core['entries'][0]['thread_info'])
 		return dst_core
 
 	def get_target_files(self, files_path, mm_file, path_append):
@@ -895,7 +898,7 @@ class X8664Converter(Converter):
 		dir_path=os.path.dirname(os.path.realpath(__file__))
 		vdso_path=os.path.join(dir_path, "templates/", "x86_64_vdso.img.tmpl")
 
-		print("vdso path", vdso_path)
+		het_log("vdso path", vdso_path)
 		f=open(vdso_path, "rb")
 		vdso=f.read()
 		f.close()
@@ -1015,7 +1018,7 @@ class Aarch64Converter(Converter):
 		    "flags": "PE_PRESENT"}
 		dir_path=os.path.dirname(os.path.realpath(__file__))
 		vdso_path=os.path.join(dir_path, "templates/", "aarch64_vdso.img.tmpl")
-		print("vdso path", vdso_path)
+		het_log("vdso path", vdso_path)
 		f=open(vdso_path, "rb")
 		vdso=f.read(PAGE_SIZE)
 		f.close()

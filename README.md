@@ -85,6 +85,8 @@ To install criu-het refer to the INSTALL.md file.
 
 ### Checkpoint/Restore Example (uses two bash windows):
 
+[Before using criu-het, it is highly recommanded to try a homogeneous (maybe on the same machine) checkpoint/restore using simply criu]
+
 Note: all criut-het commands may require root access ('sudo')
 
 checkpoint (dump):
@@ -98,9 +100,9 @@ bash0 $ ./popcorn-hello
 
 
 # on bash1 we use ps to find the pid of popcorn-hello
-bash1 $ ps aux | grep popcorn-hello
-...	22851  0.0  0.0  21928     4 pts/2    S+   12:18   0:00 ./popcorn-hello
+bash1 $ ps -C popcorn-hello
 ...
+22851  pts/2  00:00 ./popcorn-hello
 # we checkpoint the given process
 bash1 $ criu-het dump --arch aarch64 -j -t 22851
 

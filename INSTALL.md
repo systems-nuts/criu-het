@@ -30,3 +30,24 @@ To clean up previously installed CRIU instance one can type
 and everything should be removed. Note though that if some variable (**DESTDIR**, **BINDIR**
 and such) has been used during installation procedure, the same *must* be passed with
 uninstall action.
+
+
+## Common requirements
+
+Make sure that all packages are installed be compiling:
+gcc libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler protobuf-compiler python-protobuf
+libnl-3-dev libnet-dev pkg-config libcap-dev python-ipaddress libbsd-dev libaio-dev asciidoc
+
+If a package was installed after a failed compilation, use "make mrproper-top" to clean the repos.
+
+Additional packages maybe needed, please refer to: https://criu.org/Installation
+
+
+
+## Install CRIU-HET
+
+criu-het is installed at same time as criu. However, for criu-het to work correctly, additional
+packages needs to be installed: python-six and pwntools. Both of which are python scripts.
+
+Note: criu is simply a bash script that export a env variable before calling criu and then call
+crit (python script) with the recode command.

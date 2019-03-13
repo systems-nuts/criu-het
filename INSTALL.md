@@ -49,5 +49,3 @@ Additional packages maybe needed, please refer to: https://criu.org/Installation
 criu-het is installed at same time as criu. However, for criu-het to work correctly, additional
 packages needs to be installed: python-six and pwntools. Both of which are python scripts.
 
-Note: criu is simply a bash script that export a env variable before calling criu and then call
-crit (python script) with the recode command.

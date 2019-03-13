@@ -71,6 +71,61 @@ Here are some useful hints to get involved.
 * Spread the word about CRIU in [social networks](http://criu.org/Contacts);
 * If you're giving a talk about CRIU -- let us know, we'll mention it on the [wiki main page](https://criu.org/News/events);
 
+
+## CRIU-HET
+
+'criu-het' (het for heterogeneous) allows to create a checkpoint to an architecture that is different from the current host.
+Currently only aarch64 and x86\_64 are supported. Only binaries compiled witht the popcorn-compiler (branch criu) are supported.
+
+criu-het is simply a bash script that export a env variable before calling criu and then call crit (python script) with the "recode" command.
+One can use criu-het -h to see the option added by criu-het, which is "--arch".
+
+To install criu-het refer to the INSTALL.md file.
+
+
+### Checkpoint/Restore Example (uses two bash windows):
+
+Note: all criut-het commands may require root access ('sudo')
+
+checkpoint (dump):
+```
+#To run a popcorn process on needs a binary for all supported arch (popcorn_x86-64 and popcorn_aarch64)
+#In addition to the one of current arch (popcorn-hello: a copy of popcorn_x86-64)
+bash0 $ ls
+popcorn-hello popcorn-hello_x86-64 popccorn_aarch64
+# start popcorn-hello on bash0
+bash0 $ ./popcorn-hello
+
+
+# on bash1 we use ps to find the pid of popcorn-hello
+bash1 $ ps aux | grep popcorn-hello
+...	22851  0.0  0.0  21928     4 pts/2    S+   12:18   0:00 ./popcorn-hello
+...
+# we checkpoint the given process
+bash1 $ criu-het dump --arch aarch64 -j -t 22851
+
+# The dump. In addition to the normal dump. One can find the dump of aarch64 in aarch64' folder.
+bash1 $ ls
+arch64/  core-22851.img  fdinfo-2.img  ... tty-info.img
+```
+
+Restore:
+```
+# before restoring, we cp the target file to the target architecture
+bash0 $ cp popcorn-hello_aarch64 popcorn-hello
+# Note: the above step is currently done by criu-het...
+
+bash1 $ #ssh to remote node
+bash1 $ #cd to the dump folder and into the 'aarch64' folder
+#Note: both systems are supposed to have the same filesystem
+#Otherwise one needed to copy the dump and the binaries (into the same paths)
+
+#Restoring the task on aarch64
+bash1 $ ciru-het restore -j
+```
+
 ## Licence
 
 The project is licensed under GPLv2 (though files sitting in the lib/ directory are LGPLv2.1).
+
+

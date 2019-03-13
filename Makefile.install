@@ -46,7 +46,7 @@ install-compel: $(compel-install-targets)
 .PHONY: install-compel
 
 install-het: 
-	$(Q) install ./script/criu-het $(SBINDIR)
+	$(Q) install ./scripts/criu-het $(SBINDIR)
 .PHONY: install-het
 
 install: install-man install-lib install-criu install-compel install-het ;

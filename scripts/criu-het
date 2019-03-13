@@ -40,12 +40,12 @@ then
 fi
 
 options="${_options[@]}"
-echo "All options:" $options
+#echo "All options:" $options
 
 function local_checkpoint()
 {
 	options=$1
-	echo "executing criu with params: $options"
+	#echo "executing criu with params: $options"
 	criu $options
 }
 
@@ -56,7 +56,7 @@ function het_checkpoint()
 	outdir=$3
 
 	export CRIU_TARGET_ARCH=$target_arch
-	echo "executing criu with params: $options"
+	#echo "executing criu with params: $options"
 
 	criu $options
 	if [ -z $outdir ]; then

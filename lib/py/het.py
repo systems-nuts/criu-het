@@ -805,12 +805,12 @@ class X8664Converter(Converter):
 
 		#convert tc
 		#pgm_img['entries'][0]['tc']['cg_set'] = 2
-		pgm_img['entries'][0]['tc']['loginuid'] = 1003
-		pgm_img['entries'][0]['tc']['rlimits']["rlimits"] = self.__get_rlimits()
-		pgm_img['entries'][0]['thread_core']['creds']['uid'] = 1003
-		pgm_img['entries'][0]['thread_core']['creds']['euid'] = 1003
-		pgm_img['entries'][0]['thread_core']['creds']['suid'] = 1003
-		pgm_img['entries'][0]['thread_core']['creds']['fsuid'] = 1003
+		#pgm_img['entries'][0]['tc']['loginuid'] = 1003
+		#pgm_img['entries'][0]['tc']['rlimits']["rlimits"] = self.__get_rlimits()
+		#pgm_img['entries'][0]['thread_core']['creds']['uid'] = 1003
+		#pgm_img['entries'][0]['thread_core']['creds']['euid'] = 1003
+		#pgm_img['entries'][0]['thread_core']['creds']['suid'] = 1003
+		#pgm_img['entries'][0]['thread_core']['creds']['fsuid'] = 1003
 		
 		het_log(pgm_img)
 		return pgm_img
@@ -1063,13 +1063,13 @@ class Aarch64Converter(Converter):
 		pgm_img['entries'][0]['ti_aarch64'] = dst_info
 
 		#convert tc
-		pgm_img['entries'][0]['tc']['cg_set'] = 1
-		pgm_img['entries'][0]['tc']['loginuid'] = 1004
-		pgm_img['entries'][0]['tc']['rlimits']["rlimits"] = self.__get_rlimits()
-		pgm_img['entries'][0]['thread_core']['creds']['uid'] = 1004
-		pgm_img['entries'][0]['thread_core']['creds']['euid'] = 1004
-		pgm_img['entries'][0]['thread_core']['creds']['suid'] = 1004
-		pgm_img['entries'][0]['thread_core']['creds']['fsuid'] = 1004
+		#pgm_img['entries'][0]['tc']['cg_set'] = 1
+		#pgm_img['entries'][0]['tc']['loginuid'] = 1004
+		#pgm_img['entries'][0]['tc']['rlimits']["rlimits"] = self.__get_rlimits()
+		#pgm_img['entries'][0]['thread_core']['creds']['uid'] = 1004
+		#pgm_img['entries'][0]['thread_core']['creds']['euid'] = 1004
+		#pgm_img['entries'][0]['thread_core']['creds']['suid'] = 1004
+		#pgm_img['entries'][0]['thread_core']['creds']['fsuid'] = 1004
 		
 
 		return pgm_img

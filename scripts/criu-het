@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 all_args="$*"
 host=$(uname -m)
 

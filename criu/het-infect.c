@@ -85,6 +85,8 @@ static char* get_binary_path(int pid)
 	static char exe_path[64];
 
 	sprintf(exe_path, "/proc/%d/exe", pid);
+	//pr_info("%s: proc exec path is %s\n", __func__, exe_path);
+	printf("%s: proc exec path is %s\n", __func__, exe_path);
 	ret = readlink(exe_path, binary_path, MAXPATH);
 	if(ret<=0)
 		return NULL;
@@ -180,21 +182,31 @@ static int __popcorn_wait_task(int pid, long addr, int target_id)
 	
 	int status=0;
 	do{
+		printf("waiting stack transformation...\n");
 		//second wait: wait for the cond below otherwise continue
 		ret=waitpid(pid, &status, __WALL);
 		if (ret < 0){
-			perror("error waitpid\n");
+			perror("__popcorn_wait_task error waitpid");
 			goto err;
 		}
-		if(WIFSTOPPED(status))
+		if (WIFEXITED(status))
+			pr_err("Task exited with %d\n", WEXITSTATUS(status));
+		else if(WIFSTOPPED(status))
 		{
 			int sig=WSTOPSIG(status);
 			if(sig == SIGALRM && (getdata(pid, addr))==-1) {
+				printf("Stack transformation done\n");
 				break;
-			}else 
+			}else{ 
+				printf("Putting signal %d\n", sig);
 				if (ptrace(PTRACE_CONT, pid, NULL, (void*)(long)sig)) {
 					pr_info("Can't continue");
 				}
+			}
+		}else if (WIFSIGNALED(status))
+		{
+			pr_err("Task signaled with %d: %s\n",
+				WTERMSIG(status), strsignal(WTERMSIG(status)));
 		}
 	}while(1);
 
@@ -235,7 +247,7 @@ int popcorn_interrrupt_task(int pid, char* target_str)
 	bin_file=get_binary_path(pid);
 	if(!bin_file)
 	{
-		pr_warn("Unable to read bin path");
+		pr_warn("Unable to read bin path\n");
 		return -1;
 	}
 	

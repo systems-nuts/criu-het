@@ -409,6 +409,8 @@ class Converter():
 		###Generate output directory
 		if not os.path.exists(outdir):
 			os.makedirs(outdir)
+
+		handled_files=[]
 		#populate with files
 		for fl in onlyfiles:
 			src_file=None
@@ -429,6 +431,7 @@ class Converter():
 				dest_img=dest_pages_path
 			if not src_file:
 				continue
+			handled_files.append(src_file)
 			bname=os.path.basename(src_file)
 			dst_file=os.path.join(outdir, bname)
 			if "pages" in fl: #just copy to target file
@@ -437,6 +440,7 @@ class Converter():
 			else:
 				het_log("src", dest_img, "dst", dst_file)
 				pycriu.images.dump(dest_img, open(dst_file, "w+"))
+		return handled_files
 
 	def recode(self, arch, directory, outdir, path_append):
 		onlyfiles = [f for f in listdir(directory) if (isfile(join(directory, f)) and "img" in f)]
@@ -445,8 +449,10 @@ class Converter():
 			if "pstree" in fl:	
 				pstree_file=os.path.join(directory, fl)
 		assert(pstree_file)
+		handled_files=[]
 		for _pid in self.get_all_pids(pstree_file):
-			self.__recode_pid(_pid, arch, directory, outdir, onlyfiles, path_append)
+			ret=self.__recode_pid(_pid, arch, directory, outdir, onlyfiles, path_append)
+			handled_files.extend(ret)
 		
 		#copy not transformed files
 		het_log("copying remaining files")
@@ -454,9 +460,7 @@ class Converter():
 			het_log("copying...", fl)
 			dst_file=os.path.join(outdir, fl)
 			src_file=os.path.join(directory, fl)
-			#is it healthy to skip cgroup
-			special_files=["files" , "core" , "mm" , "pagemap" , "pages"] #, "cgroup"]
-			if any(s in fl for s in special_files):
+			if src_file in handled_files:
 				het_log("skipped", fl)
 			else:
 				#copy not transformed files:

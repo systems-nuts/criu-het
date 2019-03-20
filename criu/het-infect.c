@@ -186,11 +186,14 @@ static int __popcorn_wait_task(int pid, long addr, int target_id)
 		//second wait: wait for the cond below otherwise continue
 		ret=waitpid(pid, &status, __WALL);
 		if (ret < 0){
-			perror("__popcorn_wait_task error waitpid");
+			pr_err("%s:%s:%d error waitpid", __FILE__, __func__, __LINE__);
 			goto err;
 		}
 		if (WIFEXITED(status))
+		{
 			pr_err("Task exited with %d\n", WEXITSTATUS(status));
+			goto err;
+		}
 		else if(WIFSTOPPED(status))
 		{
 			int sig=WSTOPSIG(status);

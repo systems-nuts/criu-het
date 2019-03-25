@@ -4,6 +4,7 @@ set -e
 
 all_args="$*"
 host=$(uname -m)
+CRIU_BIN=criu-org
 
 target_arch=""
 outdir="."
@@ -35,8 +36,8 @@ done
 
 if [ "$_help" = "1" ]
 then
-	echo "[criu-het has the same usage as criu except for the add option --arch (see below)]"
-	criu -h
+	echo "[criu-het has the same usage as $CRIU_BIN except for the add option --arch (see below)]"
+	$CRIU_BIN -h
 	echo -e "  --arch architecture\tthis option create an additional folder containing \n  \t\t\tthe target architecture dump (x86_64 or aarch64)"
 	exit
 fi
@@ -47,8 +48,8 @@ options="${_options[@]}"
 function local_checkpoint()
 {
 	options=$1
-	#echo "executing criu with params: $options"
-	criu $options
+	#echo "executing $CRIU_BIN with params: $options"
+	$CRIU_BIN $options
 }
 
 function het_checkpoint()
@@ -58,9 +59,9 @@ function het_checkpoint()
 	outdir=$3
 
 	export CRIU_TARGET_ARCH=$target_arch
-	#echo "executing criu with params: $options"
+	#echo "executing $CRIU_BIN with params: $options"
 
-	criu $options
+	$CRIU_BIN $options
 	if [ -z $outdir ]; then
 		target_outdir=$target_arch
 	else

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+host=$(uname -m)
+
+#dump for opposite arch
+if [ "x86_64" = "$host" ]
+then
+	target="aarch64"
+else
+	target="x86_64"
+fi
+
+criu-het --arch $target $*

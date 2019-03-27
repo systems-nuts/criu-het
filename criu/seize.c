@@ -8,6 +8,7 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <assert.h>
 
 #include "int.h"
 #include "common/compiler.h"
@@ -781,6 +782,59 @@ err_close:
 	return -1;
 }
 
+static int popcorn_signal_stack_transform_pid(pid_t pid)
+{
+
+}
+
+static int popcorn_signal_stack_transform_tree(char *root_path)
+{
+	DIR *dir;
+	struct dirent *de;
+	char path[PATH_MAX];
+	FILE *f;
+
+	/*
+	 * New tasks can appear while a freezer state isn't
+	 * frozen, so we need to catch all new tasks.
+	 */
+	snprintf(path, sizeof(path), "%s/tasks", root_path);
+	f = fopen(path, "r");
+	if (f == NULL) {
+		pr_perror("Unable to open %s", path);
+		return -1;
+	}
+	while (fgets(path, sizeof(path), f)) {
+		pid_t pid;
+		int ret;
+
+		pid = atoi(path);
+
+		popcorn_signal_stack_transform_pid(pid);
+
+	}
+	fclose(f);
+
+	return 0;
+}
+
+static int popcorn_signal_stack_transform()
+{
+	pid_t pid = root_item->pid->real;
+
+	if (opts.freeze_cgroup && popcorn_signal_stack_transform_tree())
+		goto err;
+
+	if (!opts.freeze_cgroup && popcorn_signal_stack_transform_pid(pid)) {
+		goto err;
+	}
+
+	return 0;
+err:
+	return -1;
+
+}
+
 int collect_pstree(void)
 {
 	pid_t pid = root_item->pid->real;
@@ -796,6 +850,7 @@ int collect_pstree(void)
 	 */
 	alarm(opts.timeout);
 
+freeze_again:
 	if (opts.freeze_cgroup && freeze_processes())
 		goto err;
 
@@ -807,6 +862,23 @@ int collect_pstree(void)
 	ret = compel_wait_task(pid, -1, parse_pid_status, NULL, &creds.s, NULL);
 	if (ret < 0)
 		goto err;
+	pr_info("%s: wait done ret %d\n", __func__, ret);
+
+#ifdef POPCORN
+	popcorn_signal_stack_transform();
+	pstree_switch_state(root_item, TASK_ALIVE);
+	popcorn_wait_stack_transformation();
+#if 0
+	if (opts.freeze_cgroup && popcorn_unfreeze_processes())
+		goto err;
+
+	if (!opts.freeze_cgroup && compel_resume_task(pid)) {
+		set_cr_errno(ESRCH);
+		goto err;
+	}
+#endif
+	goto freeze_again;
+#endif
 
 	if (ret == TASK_ZOMBIE)
 		ret = TASK_DEAD;

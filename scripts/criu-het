@@ -10,12 +10,17 @@ target_arch=""
 outdir="."
 _options=()
 _help=0
+DUMP=false
 while [ "$#" -gt 0 ]
 do
         case "$1" in
         --arch)
 		target_arch=$2
                 shift
+                ;;
+	dump)
+		DUMP=true
+	        _options+=("$1")
                 ;;
 	-D|--image-dir)
 		outdir=$2
@@ -45,6 +50,7 @@ fi
 options="${_options[@]}"
 #echo "All options:" $options
 
+#export CRIU_TARGET_ARCH=$target_arch
 function local_checkpoint()
 {
 	options=$1
@@ -70,7 +76,7 @@ function het_checkpoint()
 	crit recode -t $target_arch -d $outdir -o $target_outdir 
 }
 
-if [ -z $target_arch ] || [ "$target_arch" = "$host" ]
+if [ -z $target_arch ] || [ "$target_arch" = "$host" ] || [ "$DUMP" == false ]
 then
 	local_checkpoint "$options"
 else

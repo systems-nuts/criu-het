@@ -4,6 +4,8 @@ set -e
 
 host=$(uname -m)
 
+echo "$(date) $0 $*" >> /tmp/criu-log-calls
+
 #dump for opposite arch
 if [ "x86_64" = "$host" ]
 then

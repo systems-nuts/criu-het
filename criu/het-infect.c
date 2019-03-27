@@ -34,48 +34,7 @@ int cfileexists(const char* filename){
 }
 
 /*****************************************************************/
-long get_sym_addr(char* bin_file, char* sym)
-{
-	FILE *fp;
-	char buff[256];
-	char cmd[128];
-	char nm_path[]="/usr/bin/nm";
-
-	if(cfileexists(nm_path))
-	{
-		pr_warn("NM Binary not found");
-		return -1;
-	}else
-		pr_info("NM Binary exist %s\n", nm_path);
-
-	/* Open the command for reading. */
-	sprintf(cmd, "%s %s", nm_path, bin_file);
-	fp = popen(cmd, "r");
-	if (fp == NULL) {
-		pr_info("Failed to run command\n" );
-		return -1;
-	}
-
-	char* addr_str=NULL;
-	char* name;
-	/* Read the output a line at a time - output it. */
-	while (fgets(buff, sizeof(buff)-1, fp) != NULL) {
-		pr_info("current symbol %s", buff);
-		addr_str = strtok(buff, " ");
-		strtok(NULL, " ");//skip type
-		name = strtok(NULL, " ");
-		if(name && strncmp(sym, name, strlen(sym))==0)
-			break;
-	}
-
-	/* close */
-	pclose(fp);
-
-	if(addr_str)
-		return strtol(addr_str, NULL, 16);
-	return -1;
-}
-
+long get_symbol_address(const char* path_to_bin, const char* searched_symbol);
 
 static char* get_binary_path(int pid)
 {
@@ -163,13 +122,28 @@ static int __popcorn_interrrupt_task(int pid)
 
 #endif
 
+int parse_pid_status(pid_t pid, struct seize_task_status *ss, void *data);
 static int __popcorn_wait_task(int pid, long addr, int target_id)
 {
 	int ret;
+	int status;
+	struct seize_task_status ss;
 
 	//first wait we assume SIGTRAP: todo check!
-    	wait(NULL);
-    	pr_info("The process stopped a first time pid %d; addr %lx; target arch %d\n", pid, addr, target_id);
+    	pr_info("Wating for the process to stop a first time %d; addr %lx; target arch %d\n", pid, addr, target_id);
+	//ret = compel_wait_task(pid, -1, parse_pid_status, NULL, &ss, NULL); //wait4(pid, &status, __WALL, NULL);
+	ret = wait4(pid, &status, __WALL, NULL);
+	if (ret < 0) {
+		/*
+		 * wait4() can expectedly fail only in a first time
+		 * if a task is zombie. If we are here from try_again,
+		 * this means that we are tracing this task.
+		 *
+		 * So here we can be only once in this function.
+		 */
+		pr_err("error in %s\n", __func__);
+	}
+    	pr_info("The process stopped a first time pid %d; addr %lx; target arch %d (ret %d)\n", pid, addr, target_id, ret);
 
 	/* Put one in the variable */
 	ret=putdata(pid, addr, target_id);
@@ -180,7 +154,7 @@ static int __popcorn_wait_task(int pid, long addr, int target_id)
 		pr_info("Can't continue");
 	}
 	
-	int status=0;
+	status=0;
 	do{
 		printf("waiting stack transformation...\n");
 		//second wait: wait for the cond below otherwise continue
@@ -260,10 +234,11 @@ int popcorn_interrrupt_task(int pid, char* target_str)
 		pr_warn("Binary file not found");
 		return -1;
 	}else
-		pr_info("Binary file exist %s\n", bin_file);
+		pr_info("Binary file exist! %s\n", bin_file);
+
 	int target_id = get_target_id(target_str);
+	addr = get_symbol_address(bin_file, MIGRATION_GBL_VARIABLE);
 	ret = __popcorn_interrrupt_task(pid);
-	addr = get_sym_addr(bin_file, MIGRATION_GBL_VARIABLE);
 	ret |= __popcorn_wait_task(pid, addr, target_id);
 	return ret;
 }

@@ -50,7 +50,7 @@ fi
 options="${_options[@]}"
 #echo "All options:" $options
 
-#export CRIU_TARGET_ARCH=$target_arch
+export CRIU_TARGET_ARCH=$target_arch
 function local_checkpoint()
 {
 	options=$1

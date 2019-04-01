@@ -149,6 +149,8 @@ static int __compel_interrupt_task(int pid)
 int popcorn_interrrupt_task(int pid, char* target_str);
 int compel_interrupt_task(int pid)
 {
+	int ret;
+#if 0
 	int ret=0;
 	char *target_arch=getenv("CRIU_TARGET_ARCH");
 	pr_info("CRIU_TARGET_ARCH %s\n", target_arch);
@@ -159,7 +161,9 @@ int compel_interrupt_task(int pid)
 		pr_info("%s ret %d\n", __func__, ret);
 	}
 	else
+#else
 		ret=__compel_interrupt_task(pid);
+#endif
 	return ret;
 
 }

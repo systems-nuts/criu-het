@@ -1,5 +1,6 @@
 #include <sys/time.h>
 #include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <signal.h>
@@ -1654,6 +1655,7 @@ static int cr_dump_finish(int ret)
 {
 	int post_dump_ret = 0;
 
+	//assert(0);
 	if (disconnect_from_page_server())
 		ret = -1;
 
@@ -1734,7 +1736,28 @@ static int cr_dump_finish(int ret)
 		write_stats(DUMP_STATS);
 		pr_info("Dumping finished successfully\n");
 	}
+	//assert(0);
 	return post_dump_ret ? : (ret != 0);
+}
+
+int print_status(pid_t pid)
+{
+	char aux[128];
+	FILE *f;
+
+	sprintf(aux, "/proc/%d/status", pid);
+	f = fopen(aux, "r");
+	if (!f)
+		return -1;
+
+	pr_info("opening: %s", aux);
+	while (fgets(aux, sizeof(aux), f)) {
+		pr_info("\t %s", aux);
+	}
+
+	fclose(f);
+	return 0;
+
 }
 
 int cr_dump_tasks(pid_t pid)
@@ -1747,6 +1770,7 @@ int cr_dump_tasks(pid_t pid)
 
 	pr_info("========================================\n");
 	pr_info("Dumping processes (pid: %d)\n", pid);
+	print_status(pid);
 	pr_info("========================================\n");
 
 	root_item = alloc_pstree_item();

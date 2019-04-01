@@ -127,7 +127,7 @@ static int __popcorn_wait_task(int pid, long addr, int target_id)
 {
 	int ret;
 	int status;
-	struct seize_task_status ss;
+	//struct seize_task_status ss;
 
 	//first wait we assume SIGTRAP: todo check!
     	pr_info("Wating for the process to stop a first time %d; addr %lx; target arch %d\n", pid, addr, target_id);
@@ -244,3 +244,32 @@ int popcorn_interrrupt_task(int pid, char* target_str)
 }
 
 /*****************************************************************/
+int popcorn_signal_stack_transform_pid(pid_t pid, char* target_arch)
+{
+	int ret = 0;
+	long addr;
+	char* bin_file;
+
+	bin_file=get_binary_path(pid);
+	if(!bin_file)
+	{
+		pr_warn("Unable to read bin path\n");
+		return -1;
+	}
+	
+	pr_info("binary path of process %d is %s\n", pid, bin_file);
+	if(cfileexists(bin_file))
+	{
+		pr_warn("Binary file not found");
+		return -1;
+	}else
+		pr_info("Binary file exist! %s\n", bin_file);
+
+	int target_id = get_target_id(target_arch);
+	addr = get_symbol_address(bin_file, MIGRATION_GBL_VARIABLE);
+	ret=putdata(pid, addr, target_id);
+	if(ret) 
+		perror("putdata");
+
+	return 0;
+}

@@ -12,8 +12,8 @@
 #include <string.h>
 
 
-//#define __debug(...) /*printf(__VA_ARGS__)*/
-#define __debug(...) pr_info(__VA_ARGS__)
+#define __debug(...) /*printf(__VA_ARGS__)*/
+//#define __debug(...) pr_info(__VA_ARGS__)
 
 //#include <iostream>
 long get_symbol_address(const char* path_to_bin, const char* searched_symbol)
@@ -144,6 +144,8 @@ long get_symbol_address(const char* path_to_bin, const char* searched_symbol)
 		}
 	}
 	__debug("\n");
+
+	pr_info("address of symbol %s is %lx\n", searched_symbol, address);
 	return address;
 
 err:

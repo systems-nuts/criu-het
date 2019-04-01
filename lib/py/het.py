@@ -16,7 +16,7 @@ from abc import ABCMeta, abstractmethod
 PAGE_SIZE=4096
 
 def het_log(*args):
-	pass
+	print(args)
 
 class Reg64(Structure):
 	_fields_ = [("x", c_ulonglong)]
@@ -105,7 +105,7 @@ class Converter():
 		#return
 		ret=fd.readinto(dest_regs) 
 		het_log("size", sizeof(dest_regs), "ret", ret)
-		het_log("magic", hex(dest_regs.magic))
+		print("magic", hex(dest_regs.magic))
 		#het_log dest_regs
 		return dest_regs
 
@@ -370,17 +370,14 @@ class Converter():
 	def get_target_mem(self, mm_file, pagemap_file,  pages_file):
 		pass
 
-	def __recode_pid(self, pid, arch, directory, outdir, onlyfiles, path_append):
+	def __recode_pid(self, pid, arch, directory, outdir, onlyfiles, files_file, path_append):
 		### To convert we need some files #TODO: use magic to identify the files?
 		#TODO: use dict!
 		pagemap_file=""
 		pages_file=""
 		core_file=""
-		files_file=""
 		mm_file=""
 		for fl in onlyfiles:
-			if "files" in  fl: #only one
-				files_file=os.path.join(directory, fl)
 			if str(pid) not in fl:
 				continue
 			if "pagemap" in fl:	
@@ -406,9 +403,6 @@ class Converter():
 		dest_files=self.get_target_files(files_file, mm_file, path_append) #must be after get_target_core
 		dest_mm, dest_pagemap, dest_pages_path=self.get_target_mem(mm_file, pagemap_file,  pages_file)
 
-		###Generate output directory
-		if not os.path.exists(outdir):
-			os.makedirs(outdir)
 
 		handled_files=[]
 		#populate with files
@@ -443,15 +437,28 @@ class Converter():
 		return handled_files
 
 	def recode(self, arch, directory, outdir, path_append):
+		###Generate output directory
+		if not os.path.exists(outdir):
+			os.makedirs(outdir)
+
 		onlyfiles = [f for f in listdir(directory) if (isfile(join(directory, f)) and "img" in f)]
 		pstree_file=None
+		files_file=None
+		handled_files=[]
 		for fl in onlyfiles:
 			if "pstree" in fl:	
 				pstree_file=os.path.join(directory, fl)
+			if "files" in  fl: #use the same file across recode_pid
+				files_file_orig=os.path.join(directory, fl)
+				handled_files.append(files_file_orig)
+				bname=os.path.basename(files_file_orig)
+				files_file=os.path.join(outdir, bname)
+				copyfile(files_file_orig, files_file)
+
 		assert(pstree_file)
-		handled_files=[]
+		assert(files_file)
 		for _pid in self.get_all_pids(pstree_file):
-			ret=self.__recode_pid(_pid, arch, directory, outdir, onlyfiles, path_append)
+			ret=self.__recode_pid(_pid, arch, directory, outdir, onlyfiles, files_file, path_append)
 			handled_files.extend(ret)
 		
 		#copy not transformed files
@@ -853,7 +860,7 @@ class X8664Converter(Converter):
 		#copy file to appropriate arch
 		copyfile(path_x86_64, path)
 		#set size
-		statinfo = os.stat(path)
+		statinfo = os.stat(path_x86_64)
 		pgm_img["entries"][idx]["reg"]["size"] = statinfo.st_size
 		#hack: create tmp file; update: on target machine!!
 		#open("/tmp/stack-transform.log", 'a').close()
@@ -1097,23 +1104,24 @@ class Aarch64Converter(Converter):
 		self.add_target_region(mm_img, pagemap_img, pages_tmp, "VVAR")
 		return mm_img, pagemap_img, pages_tmp
 
+	def update_binary_size(self, files_img, new_size, idx):
+		files_img["entries"][idx]["reg"]["size"] = new_size
+		return files_img
 
-	def get_target_files(self, files_path, mm_file, path_append):
-		pgm_img=self.load_image_file(files_path)
-		fid, idx, path=self.get_binary_info(files_path, mm_file, path_append)
-		path_x86_64=path+"_x86-64"
-		path_aarch64=path+"_aarch64"
+	def copy_binary_to_target(self, bin_path):
+		path_x86_64=bin_path+"_x86-64"
+		path_aarch64=bin_path+"_aarch64"
 		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
 		#copy file to appropriate arch
-		copyfile(path_aarch64, path)
-		#set size
-		statinfo = os.stat(path)
-		pgm_img["entries"][idx]["reg"]["size"] = statinfo.st_size
-		#hack: create tmp file; update: on target machine!!
-		#open("/tmp/stack-transform.log", 'a').close()
+		copyfile(path_aarch64, bin_path)
+		statinfo = os.stat(path_aarch64)
+		return statinfo.st_size
 
-		return pgm_img
-
+	def get_target_files(self, files_path, mm_file, path_append):
+		files_img=self.load_image_file(files_path)
+		fid, idx, bin_path=self.get_binary_info(files_path, mm_file, path_append)
+		new_size = self.copy_binary_to_target(bin_path)
+		return self.update_binary_size(files_img, new_size, idx)
 
 
 

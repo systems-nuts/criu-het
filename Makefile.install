@@ -48,10 +48,10 @@ install-compel: $(compel-install-targets)
 install-het: 
 	$(Q) install ./scripts/criu-het $(SBINDIR)
 	#Rename criu to criu-org
-	$(Q) install $(SBINDIR)/criu $(SBINDIR)/criu-org
+	#$(Q) install $(SBINDIR)/criu $(SBINDIR)/criu-org
 	#criu is now a script that dump for all supported architectures
 	#for now we have only one additional arch (may not be efficient if more)
-	$(Q) install ./scripts/criu-dump $(SBINDIR)/criu
+	#$(Q) install ./scripts/criu-dump $(SBINDIR)/criu
 .PHONY: install-het
 
 install: install-man install-lib install-criu install-compel install-het ;

@@ -8,6 +8,7 @@ CRIU_BIN=criu-org
 
 target_arch=""
 outdir="."
+tree_pid=""
 _options=()
 _help=0
 DUMP=false
@@ -24,6 +25,12 @@ do
                 ;;
 	-D|--image-dir)
 		outdir=$2
+	        _options+=("$1")
+	        _options+=("$2")
+                shift
+                ;;
+	-t|--tree)
+		tree_pid=$2
 	        _options+=("$1")
 	        _options+=("$2")
                 shift
@@ -50,7 +57,6 @@ fi
 options="${_options[@]}"
 #echo "All options:" $options
 
-export CRIU_TARGET_ARCH=$target_arch
 function local_checkpoint()
 {
 	options=$1
@@ -58,16 +64,33 @@ function local_checkpoint()
 	$CRIU_BIN $options
 }
 
+
+function notify_process()
+{
+	pid=$1
+	popcorn-notify $pid
+	for child in $(pgrep -P $pid)
+	do
+		notify_process $child
+	done
+
+}
+
 function het_checkpoint()
 {
 	options=$1
 	target_arch=$2
 	outdir=$3
+	
+	# notify process
+	#echo "notifying $tree_pid"
+	notify_process $tree_pid
 
-	export CRIU_TARGET_ARCH=$target_arch
+	# dump process
 	#echo "executing $CRIU_BIN with params: $options"
-
 	$CRIU_BIN $options
+
+	# convert checkpoint
 	if [ -z $outdir ]; then
 		target_outdir=$target_arch
 	else

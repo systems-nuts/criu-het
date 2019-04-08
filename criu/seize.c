@@ -8,7 +8,6 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <time.h>
-#include <assert.h>
 
 #include "int.h"
 #include "common/compiler.h"
@@ -31,7 +30,6 @@ static const char frozen[]	= "FROZEN";
 static const char freezing[]	= "FREEZING";
 static const char thawed[]	= "THAWED";
 
-int print_status(pid_t pid);
 static const char *get_freezer_state(int fd)
 {
 	char state[32];
@@ -232,13 +230,11 @@ static int freezer_detach(void)
 {
 	int i;
 
-	pr_info("%s: entering\n", __func__);
 	if (!opts.freeze_cgroup)
 		return 0;
 
 	for (i = 0; i < processes_to_wait && processes_to_wait_pids; i++) {
 		pid_t pid = processes_to_wait_pids[i];
-		pr_info("%s: current pid %d\n", __func__, pid);
 		int status, save_errno;
 
 		if (ptrace(PTRACE_DETACH, pid, NULL, NULL) == 0)
@@ -531,8 +527,6 @@ static void unseize_task_and_threads(const struct pstree_item *item, int st)
 {
 	int i;
 
-	pr_info("%s: task pid %d\n", __func__, item->pid->real);
-
 	if (item->pid->state == TASK_DEAD)
 		return;
 
@@ -787,63 +781,21 @@ err_close:
 	return -1;
 }
 
-#define POPCORN 0
-
-#if POPCORN 
-int popcorn_signal_stack_transform_pid(pid_t pid, char* target_arch);
-static int popcorn_signal_stack_transform_tree(char *root_path, char* target_arch)
-{
-	char path[PATH_MAX];
-	FILE *f;
-
-	/*
-	 * New tasks can appear while a freezer state isn't
-	 * frozen, so we need to catch all new tasks.
-	 */
-	snprintf(path, sizeof(path), "%s/tasks", root_path);
-	f = fopen(path, "r");
-	if (f == NULL) {
-		pr_perror("Unable to open %s", path);
-		return -1;
-	}
-	while (fgets(path, sizeof(path), f)) {
-		pid_t pid;
-
-		pid = atoi(path);
-
-		//FIXMEret = 
-		pr_info("%s: current pid %d\n", __func__, pid);
-		popcorn_signal_stack_transform_pid(pid, target_arch);
-	}
-	fclose(f);
-
-	return 0;
-}
-#endif
-
-#if POPCORN
-static int popcorn_signal_stack_transform(char* target_arch)
+int collect_pstree(void)
 {
 	pid_t pid = root_item->pid->real;
-
-	if (opts.freeze_cgroup && popcorn_signal_stack_transform_tree(opts.freeze_cgroup, target_arch))
-		goto err;
-
-	if (!opts.freeze_cgroup && popcorn_signal_stack_transform_pid(pid, target_arch)) {
-		goto err;
-	}
-
-	return 0;
-err:
-	return -1;
-
-}
-#endif
-
-static int __collect_pstree(pid_t pid)
-{
-	int ret;
+	int ret = -1;
 	struct proc_status_creds creds;
+
+	timing_start(TIME_FREEZING);
+
+	/*
+	 * wait4() may hang for some reason. Enable timer and fire SIGALRM
+	 * if timeout reached. SIGALRM handler will do  the necessary
+	 * cleanups and terminate current process.
+	 */
+	alarm(opts.timeout);
+
 	if (opts.freeze_cgroup && freeze_processes())
 		goto err;
 
@@ -852,10 +804,9 @@ static int __collect_pstree(pid_t pid)
 		goto err;
 	}
 
-	ret = compel_wait_task(pid, -1, parse_pid_status, NULL, &(creds.s), NULL);
+	ret = compel_wait_task(pid, -1, parse_pid_status, NULL, &creds.s, NULL);
 	if (ret < 0)
 		goto err;
-	pr_info("%s: wait done ret %d\n", __func__, ret);
 
 	if (ret == TASK_ZOMBIE)
 		ret = TASK_DEAD;
@@ -877,117 +828,6 @@ static int __collect_pstree(pid_t pid)
 		ret = -1;
 		goto err;
 	}
-
-	return 0;
-
-err:
-	return -1;
-
-}
-
-static char* get_target_arch()
-{
-	char *target_arch=getenv("CRIU_TARGET_ARCH");
-	pr_info("CRIU_TARGET_ARCH %s\n", target_arch);
-	return target_arch;
-}
-	
-#if 0
-static void pstree_switch_state_all(void)
-{
-	char path[PATH_MAX];
-	FILE *f;
-
-	processes_to_wait_pids = xmalloc(sizeof(pid_t) * processes_to_wait);
-	if (processes_to_wait_pids == NULL)
-		return;
-
-	/*
-	 * New tasks can appear while a freezer state isn't
-	 * frozen, so we need to catch all new tasks.
-	 */
-	snprintf(path, sizeof(path), "%s/tasks", opts.freeze_cgroup);
-	f = fopen(path, "r");
-	if (f == NULL) {
-		pr_perror("Unable to open %s", path);
-		return;
-	}
-	int i=0;
-	while (fgets(path, sizeof(path), f)) {
-		pid_t pid;
-
-		pid = atoi(path);
-
-		processes_to_wait_pids[i] = pid;
-		i++;
-	}
-	fclose(f);
-	
-	pr_info("processes_to_wait %d==%d\n", processes_to_wait, i);
-	processes_to_wait = i;
-
-	pstree_switch_state(root_item, TASK_ALIVE);
-
-	xfree(processes_to_wait_pids);
-	processes_to_wait_pids = NULL;
-
-	return;
-}
-#endif
-
-static int __collect_pstree_popcorn(pid_t pid, char* target_arch)
-{
-	int ret=0;
-
-#if POPCORN
-	print_status(pid);
-	pr_info("heterogeneous pausing!\n");
-	popcorn_signal_stack_transform(target_arch);
-	pstree_switch_state(root_item, TASK_ALIVE);
-
-	//popcorn_wait_stack_transformation();
-	sleep(6);
-
-	print_status(pid);
-
-	/* freeze again */
-	ret=__collect_pstree(pid); //, &creds);
-	if (ret < 0)
-		goto err;
-#endif
-
-	return ret;
-}
-
-int collect_pstree(void)
-{
-	pid_t pid = root_item->pid->real;
-	int ret = -1;
-
-	timing_start(TIME_FREEZING);
-
-	print_status(pid);
-	/*
-	 * wait4() may hang for some reason. Enable timer and fire SIGALRM
-	 * if timeout reached. SIGALRM handler will do  the necessary
-	 * cleanups and terminate current process.
-	 */
-	alarm(opts.timeout);
-
-	/* freeze/interrupt process */
-	ret=__collect_pstree(pid);
-	if (ret < 0)
-		goto err;
-
-
-
-	char *target_arch=get_target_arch();
-	if(target_arch)
-	{
-		ret = __collect_pstree_popcorn(pid, target_arch);
-	}
-
-	//assert(0);
 
 	ret = 0;
 	timing_stop(TIME_FREEZING);

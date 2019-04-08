@@ -16,7 +16,7 @@ from abc import ABCMeta, abstractmethod
 PAGE_SIZE=4096
 
 def het_log(*args):
-	print(args)
+	pass #print(args)
 
 class Reg64(Structure):
 	_fields_ = [("x", c_ulonglong)]

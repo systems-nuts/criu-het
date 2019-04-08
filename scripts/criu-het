@@ -76,6 +76,20 @@ function notify_process()
 
 }
 
+start_ms=0
+start_timer()
+{
+	#date +"%s %N"
+	ms=$(($(date +%s%N)/1000000))
+	echo $ms
+}
+
+end_timer()
+{
+	ms=$(($(date +%s%N)/1000000))
+	echo $((ms-start_ms))
+}
+
 function het_checkpoint()
 {
 	options=$1
@@ -84,19 +98,25 @@ function het_checkpoint()
 	
 	# notify process
 	#echo "notifying $tree_pid"
+	start_ms=$(start_timer)
 	notify_process $tree_pid
+	end_timer
 
 	# dump process
 	#echo "executing $CRIU_BIN with params: $options"
+	start_ms=$(start_timer)
 	$CRIU_BIN $options
+	end_timer
 
 	# convert checkpoint
+	start_ms=$(start_timer)
 	if [ -z $outdir ]; then
 		target_outdir=$target_arch
 	else
 		target_outdir=$outdir/$target_arch
 	fi
 	crit recode -t $target_arch -d $outdir -o $target_outdir 
+	end_timer
 }
 
 if [ -z $target_arch ] || [ "$target_arch" = "$host" ] || [ "$DUMP" == false ]

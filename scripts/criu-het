@@ -68,7 +68,7 @@ function local_checkpoint()
 function notify_process()
 {
 	pid=$1
-	popcorn-notify $pid
+	popcorn-notify $pid $target_arch
 	for child in $(pgrep -P $pid)
 	do
 		notify_process $child
@@ -87,7 +87,7 @@ start_timer()
 end_timer()
 {
 	ms=$(($(date +%s%N)/1000000))
-	echo $((ms-start_ms))
+	echo $1 $((ms-start_ms))
 }
 
 function het_checkpoint()
@@ -100,13 +100,13 @@ function het_checkpoint()
 	#echo "notifying $tree_pid"
 	start_ms=$(start_timer)
 	notify_process $tree_pid
-	end_timer
+	end_timer "notify"
 
 	# dump process
 	#echo "executing $CRIU_BIN with params: $options"
 	start_ms=$(start_timer)
 	$CRIU_BIN $options
-	end_timer
+	end_timer "dump"
 
 	# convert checkpoint
 	start_ms=$(start_timer)
@@ -116,7 +116,7 @@ function het_checkpoint()
 		target_outdir=$outdir/$target_arch
 	fi
 	crit recode -t $target_arch -d $outdir -o $target_outdir 
-	end_timer
+	end_timer "recode"
 }
 
 if [ -z $target_arch ] || [ "$target_arch" = "$host" ] || [ "$DUMP" == false ]

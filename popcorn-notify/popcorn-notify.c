@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/user.h>
-#include <sys/reg.h>
 
 #define MAXPATH 2048
 static char binary_path[MAXPATH];
@@ -79,10 +78,10 @@ int get_target_id(char* target_str)
 {
 	if(!strcmp(target_str, "aarch64"))
 		return 0;
-	if(!strcmp(target_str, "x86_64"))
+	if(!strcmp(target_str, "x86_64") || !strcmp(target_str, "x86-64"))
 		return 1;
 	printf("WARN: Unknown architecture %s. defaulting to aarch64\n", target_str);
-	return 0;
+	return -1;
 }
 
 int main(int argc, char *argv[])

@@ -53,7 +53,7 @@ def recode(opts):
 	path_append=get_default_arg(opts, 'append', "")
 	if arch == "aarch64":
 		converter = Aarch64Converter()
-	elif arch == "x86_64":
+	elif arch == "x86_64" or arch == "x86-64":
 		converter = X8664Converter()
 	converter.recode(arch, directory, outdir, path_append)
 

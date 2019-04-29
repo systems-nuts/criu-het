@@ -40,6 +40,10 @@ install-criu: criu
 	$(Q) $(MAKE) $(build)=criu install
 .PHONY: install-criu
 
+install-popcorn-notify: popcorn-notify
+	$(Q) $(MAKE) -C $< install
+.PHONY: install-popcorn-notify
+
 install-compel: $(compel-install-targets)
 	$(Q) $(MAKE) $(build)=compel install
 	$(Q) $(MAKE) $(build)=compel/plugins install
@@ -54,7 +58,7 @@ install-het:
 	#$(Q) install ./scripts/criu-dump $(SBINDIR)/criu
 .PHONY: install-het
 
-install: install-man install-lib install-criu install-compel install-het ;
+install: install-man install-lib install-criu install-compel install-het install-popcorn-notify;
 .PHONY: install
 
 uninstall:

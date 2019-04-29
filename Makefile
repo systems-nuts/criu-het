@@ -127,8 +127,8 @@ HOSTCFLAGS		+= $(WARNINGS) $(DEFINES) -iquote include/
 export CFLAGS USERCLFAGS HOSTCFLAGS
 
 # Default target
-all: criu lib crit
-.PHONY: all
+all: criu lib crit popcorn-notify
+.PHONY: all 
 
 #
 # Version headers.
@@ -235,6 +235,10 @@ crit: criu
 	$(Q) $(MAKE) $(build)=crit all
 .PHONY: crit
 
+
+popcorn-notify: 
+	$(Q) $(MAKE) -C $@
+.PHONY: popcorn-notify
 
 #
 # Libraries next once crit it ready

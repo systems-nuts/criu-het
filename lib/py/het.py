@@ -367,7 +367,7 @@ class Converter():
 	def get_target_files(self, files_path, mm_file, path_append):
 		pass
 	@abstractmethod
-	def get_target_mem(self, mm_file, pagemap_file,  pages_file):
+	def get_target_mem(self, mm_file, pagemap_file,  pages_file, dest_path):
 		pass
 
 	def __recode_pid(self, pid, arch, directory, outdir, onlyfiles, files_file, path_append):
@@ -401,7 +401,11 @@ class Converter():
 		#convert core, fs, memory (vdso)
 		dest_core=self.get_target_core(arch, binary, pages_file, pagemap_file, core_file, mm_file)
 		dest_files=self.get_target_files(files_file, mm_file, path_append) #must be after get_target_core
-		dest_mm, dest_pagemap, dest_pages_path=self.get_target_mem(mm_file, pagemap_file,  pages_file)
+
+		
+		bname=os.path.basename(pages_file)
+		dst_file=os.path.join(outdir, bname)
+		dest_mm, dest_pagemap, dest_pages_path=self.get_target_mem(mm_file, pagemap_file,  pages_file, dst_file)
 
 
 		handled_files=[]
@@ -429,8 +433,7 @@ class Converter():
 			bname=os.path.basename(src_file)
 			dst_file=os.path.join(outdir, bname)
 			if "pages" in fl: #just copy to target file
-				het_log("src", dest_img, "dst", dst_file)
-				copyfile(dest_img, dst_file)
+				het_log("copy of pages file (mem) already done above... we modified the final copy directly")
 			else:
 				het_log("src", dest_img, "dst", dst_file)
 				pycriu.images.dump(dest_img, open(dst_file, "w+"))
@@ -916,17 +919,17 @@ class X8664Converter(Converter):
 
 		return mm, pgmap, vdso
 
-	def get_target_mem(self, mm_file, pagemap_file,  pages_file):
+	def get_target_mem(self, mm_file, pagemap_file,  pages_file, dest_path):
 		mm_img=self.load_image_file(mm_file)
 		pagemap_img=self.load_image_file(pagemap_file)
-		pages_tmp=self.get_tmp_copy(pages_file)
-		self.remove_region_type(mm_img, pagemap_img, pages_tmp, "VDSO")
-		self.remove_region_type(mm_img, pagemap_img, pages_tmp, "VVAR")
-		self.remove_region_type(mm_img, pagemap_img, pages_tmp, "VSYSCALL")
-		self.add_target_region(mm_img, pagemap_img, pages_tmp, "VDSO")
-		self.add_target_region(mm_img, pagemap_img, pages_tmp, "VVAR")
-		self.add_target_region(mm_img, pagemap_img, pages_tmp, "VSYSCALL")
-		return mm_img, pagemap_img, pages_tmp
+		copyfile(pages_file, dest_path)
+		self.remove_region_type(mm_img, pagemap_img, dest_path, "VDSO")
+		self.remove_region_type(mm_img, pagemap_img, dest_path, "VVAR")
+		self.remove_region_type(mm_img, pagemap_img, dest_path, "VSYSCALL")
+		self.add_target_region(mm_img, pagemap_img, dest_path, "VDSO")
+		self.add_target_region(mm_img, pagemap_img, dest_path, "VVAR")
+		self.add_target_region(mm_img, pagemap_img, dest_path, "VSYSCALL")
+		return mm_img, pagemap_img, dest_path
 
 class Aarch64Converter(Converter):
 	def __init__(self):
@@ -1093,16 +1096,17 @@ class Aarch64Converter(Converter):
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)
 		return dst_core
 	
-	def get_target_mem(self, mm_file, pagemap_file,  pages_file):
+	def get_target_mem(self, mm_file, pagemap_file,  pages_file, dest_path):
 		mm_img=self.load_image_file(mm_file)
 		pagemap_img=self.load_image_file(pagemap_file)
-		pages_tmp=self.get_tmp_copy(pages_file)
-		self.remove_region_type(mm_img, pagemap_img, pages_tmp, "VDSO")
-		self.remove_region_type(mm_img, pagemap_img, pages_tmp, "VVAR")
-		self.remove_region_type(mm_img, pagemap_img, pages_tmp, "VSYSCALL")
-		self.add_target_region(mm_img, pagemap_img, pages_tmp, "VDSO")
-		self.add_target_region(mm_img, pagemap_img, pages_tmp, "VVAR")
-		return mm_img, pagemap_img, pages_tmp
+		#pages_tmp=self.get_tmp_copy(pages_file)
+		copyfile(pages_file, dest_path)
+		self.remove_region_type(mm_img, pagemap_img, dest_path, "VDSO")
+		self.remove_region_type(mm_img, pagemap_img, dest_path, "VVAR")
+		self.remove_region_type(mm_img, pagemap_img, dest_path, "VSYSCALL")
+		self.add_target_region(mm_img, pagemap_img, dest_path, "VDSO")
+		self.add_target_region(mm_img, pagemap_img, dest_path, "VVAR")
+		return mm_img, pagemap_img, dest_path
 
 	def update_binary_size(self, files_img, new_size, idx):
 		files_img["entries"][idx]["reg"]["size"] = new_size

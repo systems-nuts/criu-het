@@ -1,9 +1,9 @@
-FILE=popcorn-notify.c 
+SRCS=popcorn-notify.c parse-symbol.c
 BIN=popcorn-notify
 all: $(BIN)
 
-$(BIN): $(FILE)
-	gcc -g $< -o $@
+$(BIN): $(SRCS)
+	gcc -g $(SRCS) -o $@
 
 install:
 	install $(BIN) /usr/local/bin/$(BIN)

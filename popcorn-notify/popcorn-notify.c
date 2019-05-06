@@ -40,39 +40,7 @@ void putdata(pid_t child, long addr, long data)
 	ptrace(PTRACE_POKEDATA, child, addr, (void*) data);
 }
 
-long get_sym_addr(char* bin_file, char* sym)
-{
-	FILE *fp;
-	char buff[256];
-	char cmd[128];
-
-	/* Open the command for reading. */
-	sprintf(cmd, "/usr/bin/nm %s", bin_file);
-	fp = popen(cmd, "r");
-	if (fp == NULL) {
-		printf("Failed to run command\n" );
-		exit(1);
-	}
-
-	char* addr_str=NULL;
-	char* type;
-	char* name;
-	/* Read the output a line at a time - output it. */
-	while (fgets(buff, sizeof(buff)-1, fp) != NULL) {
-		addr_str = strtok(buff, " ");
-		type = strtok(NULL, " ");
-		name = strtok(NULL, " ");
-		if(name && strncmp(sym, name, strlen(sym))==0)
-			break;
-	}
-
-	/* close */
-	pclose(fp);
-
-	if(addr_str)
-		return strtol(addr_str, NULL, 16);
-	return -1;
-}
+long get_sym_addr(const char* path_to_bin, const char* searched_symbol);
 
 int get_target_id(char* target_str)
 {

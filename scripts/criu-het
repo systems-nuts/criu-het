@@ -4,7 +4,7 @@ set -e
 
 all_args="$*"
 host=$(uname -m)
-CRIU_BIN=criu-org
+CRIU_BIN=criu
 
 target_arch=""
 outdir="."
@@ -115,7 +115,8 @@ function het_checkpoint()
 	else
 		target_outdir=$outdir/$target_arch
 	fi
-	crit recode -t $target_arch -d $outdir -o $target_outdir 
+    crit recode -t $target_arch -d $outdir -o $target_outdir 
+	#python -m cProfile -o profile.dat `which crit` recode -t $target_arch -d $outdir -o $target_outdir ### this solution is low level but can be visualized with KCacheGrind, pyprof2calltree
 	end_timer "recode"
 }
 

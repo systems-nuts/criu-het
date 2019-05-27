@@ -1,3 +1,7 @@
+
+# Original version by Mohmmed Karoi Lamine, Virginia Tech 2019
+# Current version by Antonio Barbalace, Stevens 2019
+
 import os
 import json
 import sys
@@ -5,6 +9,7 @@ import pycriu
 import copy
 import shutil
 import tempfile
+import time
 from os import listdir
 from os.path import isfile, join
 from collections import OrderedDict
@@ -371,6 +376,7 @@ class Converter():
 		pass
 
 	def __recode_pid(self, pid, arch, directory, outdir, onlyfiles, files_file, path_append):
+        time_start = time.time()
 		### To convert we need some files #TODO: use magic to identify the files?
 		#TODO: use dict!
 		pagemap_file=""
@@ -397,16 +403,18 @@ class Converter():
 		##get path to binary
 		binary=self.get_binary(files_file, mm_file, path_append)
 		het_log("path to binary", binary, path_append)
-
+        time_path = time.time()
+        
 		#convert core, fs, memory (vdso)
 		dest_core=self.get_target_core(arch, binary, pages_file, pagemap_file, core_file, mm_file)
+		time_core = time.time()
 		dest_files=self.get_target_files(files_file, mm_file, path_append) #must be after get_target_core
+        time_files = time.time()
 
-		
 		bname=os.path.basename(pages_file)
 		dst_file=os.path.join(outdir, bname)
 		dest_mm, dest_pagemap, dest_pages_path=self.get_target_mem(mm_file, pagemap_file,  pages_file, dst_file)
-
+		time_mem = time.time()
 
 		handled_files=[]
 		#populate with files
@@ -437,6 +445,8 @@ class Converter():
 			else:
 				het_log("src", dest_img, "dst", dst_file)
 				pycriu.images.dump(dest_img, open(dst_file, "w+"))
+		time_copy = time.time()
+		print (pid, (time_path - time_start), (time_core - time_path), (time_files - time_core), (time_mem - time_files), (time_copy - time_mem)
 		return handled_files
 
 	def recode(self, arch, directory, outdir, path_append):
@@ -483,72 +493,22 @@ class X8664Converter(Converter):
 		Converter.__init__(self)
 	
 	def __get_rlimits(self):
-		return [{
-                            "cur": 18446744073709551615, 
-                            "max": 18446744073709551615
-                        }, 
-                        {
-                            "cur": 18446744073709551615, 
-                            "max": 18446744073709551615
-                        }, 
-                        {
-                            "cur": 18446744073709551615, 
-                            "max": 18446744073709551615
-                        }, 
-                        {
-                            "cur": 8388608, 
-                            "max": 18446744073709551615
-                        }, 
-                        {
-                            "cur": 0, 
-                            "max": 18446744073709551615
-                        }, 
-                        {
-                            "cur": 18446744073709551615, 
-                            "max": 18446744073709551615
-                        }, 
-                        {
-                            "cur": 515133, 
-                            "max": 515133
-                        }, 
-                        {
-                            "cur": 8192, 
-                            "max": 100000
-                        }, 
-                        {
-                            "cur": 65536, 
-                            "max": 65536
-                        }, 
-                        {
-                            "cur": 18446744073709551615, 
-                            "max": 18446744073709551615
-                        }, 
-                        {
-                            "cur": 18446744073709551615, 
-                            "max": 18446744073709551615
-                        }, 
-                        {
-                            "cur": 515133, 
-                            "max": 515133
-                        }, 
-                        {
-                            "cur": 819200, 
-                            "max": 819200
-                        }, 
-                        {
-                            "cur": 0, 
-                            "max": 0
-                        }, 
-                        {
-                            "cur": 0, 
-                            "max": 0
-                        }, 
-                        {
-                            "cur": 18446744073709551615, 
-                            "max": 18446744073709551615
-                        }
-                    ]
-
+		return [{"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 8388608, "max": 18446744073709551615}, 
+                {"cur": 0, "max": 18446744073709551615}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 515133, "max": 515133}, 
+                {"cur": 8192, "max": 100000}, 
+                {"cur": 65536, "max": 65536}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 515133, "max": 515133}, 
+                {"cur": 819200, "max": 819200}, 
+                {"cur": 0, "max": 0}, 
+                {"cur": 0, "max": 0}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}]
 
 	def convert_to_dest_core(self, pgm_img, dest_regs, dest_tls): #, old_stack_tmpl, new_stack_tmpl):
 		het_log("Magic", dest_regs.magic) #TODO: check
@@ -602,175 +562,27 @@ class X8664Converter(Converter):
                     "rdp": 140735536563788,
                     "mxcsr": 8064,
                     "mxcsr_mask": 65535,
-                    "st_space": [
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        2147483648,
-                        16386,
-                        0
-                    ],
-                    "xmm_space": [
-                        16, 
-                        48, 
-                        2343184048, 
-                        32767, 
-                        5384384, 
-                        0, 
-                        5261400, 
-                        0, 
-                        0, 
-                        0, 
-                        1, 
-                        0, 
-                        0, 
-                        0, 
-                        20, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0, 
-                        0
-                    ], 
-                    "xsave": {
-                        "xstate_bv": 3, 
-                        "ymmh_space": [
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0, 
-                            0
-                        ]
-                    }
+                    "st_space": [ 0, 0, 0, 0, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 2147483648, 16386, 0],
+                    "xmm_space": [16, 48, 2343184048, 32767, 5384384, 0, 5261400, 0,
+                                  0, 0, 1, 0, 0, 0, 20, 0, 
+                                  0, 0, 0, 0, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 
+                                  0, 0, 0, 0, 0, 0, 0, 0], 
+                    "xsave": { "xstate_bv": 3,  
+                               "ymmh_space": [0, 0, 0, 0, 0, 0, 0, 0,
+                                              0, 0, 0, 0, 0, 0, 0, 0,
+                                              0, 0, 0, 0, 0, 0, 0, 0,
+                                              0, 0, 0, 0, 0, 0, 0, 0,
+                                              0, 0, 0, 0, 0, 0, 0, 0,
+                                              0, 0, 0, 0, 0, 0, 0, 0,
+                                              0, 0, 0, 0, 0, 0, 0, 0,
+                                              0, 0, 0, 0, 0, 0, 0, 0] }
                 } 
 		#TLS
 		dst_info["tls"]=[
@@ -871,42 +683,40 @@ class X8664Converter(Converter):
 		return pgm_img
 
 	def get_vsyscall_template(self):
-                mm={
-                    "start": "0xffffffffff600000", 
-                    "end": "0xffffffffff601000", 
-                    "pgoff": 0, 
-                    "shmid": 0, 
-                    "prot": "PROT_READ | PROT_EXEC", 
-                    "flags": "MAP_PRIVATE | MAP_ANON", 
-                    "status": "VMA_AREA_VSYSCALL | VMA_ANON_PRIVATE", 
-                    "fd": -1
-                }
+        mm={"start": "0xffffffffff600000", 
+            "end": "0xffffffffff601000", 
+            "pgoff": 0, 
+            "shmid": 0, 
+            "prot": "PROT_READ | PROT_EXEC", 
+            "flags": "MAP_PRIVATE | MAP_ANON", 
+            "status": "VMA_AREA_VSYSCALL | VMA_ANON_PRIVATE", 
+            "fd": -1
+            }
 		return mm, None, None
+    
 	def get_vvar_template(self):
-                mm={
-                    "start": "0x7fff99ec7000", 
-                    "end": "0x7fff99ec9000", 
-                    "pgoff": 0, 
-                    "shmid": 0, 
-                    "prot": "PROT_READ", 
-                    "flags": "MAP_PRIVATE | MAP_ANON", 
-                    "status": "VMA_AREA_REGULAR | VMA_ANON_PRIVATE | VMA_AREA_VVAR", 
-                    "fd": -1, 
-                    "madv": "0x10000"
-                }
+        mm={"start": "0x7fff99ec7000", 
+            "end": "0x7fff99ec9000", 
+            "pgoff": 0, 
+            "shmid": 0, 
+            "prot": "PROT_READ", 
+            "flags": "MAP_PRIVATE | MAP_ANON", 
+            "status": "VMA_AREA_REGULAR | VMA_ANON_PRIVATE | VMA_AREA_VVAR", 
+            "fd": -1, 
+            "madv": "0x10000"
+            }
 		return mm, None, None
 
 	def get_vdso_template(self):
-		mm= {
-                    "start": "0x7fff99ec9000", 
-                    "end": "0x7fff99ecb000", 
-                    "pgoff": 0, 
-                    "shmid": 0, 
-                    "prot": "PROT_READ | PROT_EXEC", 
-                    "flags": "MAP_PRIVATE | MAP_ANON", 
-                    "status": "VMA_AREA_REGULAR | VMA_AREA_VDSO | VMA_ANON_PRIVATE", 
-                    "fd": -1
-                }
+		mm= {"start": "0x7fff99ec9000", 
+             "end": "0x7fff99ecb000", 
+             "pgoff": 0, 
+             "shmid": 0, 
+             "prot": "PROT_READ | PROT_EXEC", 
+             "flags": "MAP_PRIVATE | MAP_ANON", 
+             "status": "VMA_AREA_REGULAR | VMA_AREA_VDSO | VMA_ANON_PRIVATE", 
+             "fd": -1
+             }
 		pgmap= { "vaddr": "0x7fff99ec9000", "nr_pages": 2, "flags": "PE_PRESENT"}
 
 		dir_path=os.path.dirname(os.path.realpath(__file__))
@@ -936,72 +746,23 @@ class Aarch64Converter(Converter):
 		Converter.__init__(self)
 
 	def __get_rlimits(self):
-		return [ {
-				    "cur": 18446744073709551615, 
-				    "max": 18446744073709551615
-				}, 
-				{
-				    "cur": 18446744073709551615, 
-				    "max": 18446744073709551615
-				}, 
-				{
-				    "cur": 18446744073709551615, 
-				    "max": 18446744073709551615
-				}, 
-				{
-				    "cur": 8388608, 
-				    "max": 18446744073709551615
-				}, 
-				{
-				    "cur": 0, 
-				    "max": 18446744073709551615
-				}, 
-				{
-				    "cur": 18446744073709551615, 
-				    "max": 18446744073709551615
-				}, 
-				{
-				    "cur": 515331, 
-				    "max": 515331
-				}, 
-				{
-				    "cur": 1024, 
-				    "max": 1048576
-				}, 
-				{
-				    "cur": 18446744073709551615, 
-				    "max": 18446744073709551615
-				}, 
-				{
-				    "cur": 18446744073709551615, 
-				    "max": 18446744073709551615
-				}, 
-				{
-				    "cur": 18446744073709551615, 
-				    "max": 18446744073709551615
-				}, 
-				{
-				    "cur": 515331, 
-				    "max": 515331
-				}, 
-				{
-				    "cur": 819200, 
-				    "max": 819200
-				}, 
-				{
-				    "cur": 0, 
-				    "max": 0
-				}, 
-				{
-				    "cur": 0, 
-				    "max": 0
-				}, 
-				{
-				    "cur": 18446744073709551615, 
-				    "max": 18446744073709551615
-				}
-			    ]
-
+		return [{"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 8388608, "max": 18446744073709551615}, 
+                {"cur": 0, "max": 18446744073709551615}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 515133, "max": 515133}, 
+                {"cur": 1024, "max": 100000}, #x86_64 is {"cur": 8192, "max": 100000}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, #x86_64 is {"cur": 65536, "max": 65536}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
+                {"cur": 515133, "max": 515133}, 
+                {"cur": 819200, "max": 819200}, 
+                {"cur": 0, "max": 0}, 
+                {"cur": 0, "max": 0}, 
+                {"cur": 18446744073709551615, "max": 18446744073709551615}]
+    
 	def get_vsyscall_template(self):
 		return None, None, None
 

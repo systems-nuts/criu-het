@@ -494,21 +494,20 @@ class X8664Converter(Converter):
 	
 	def __get_rlimits(self):
 		return [{"cur": 18446744073709551615, "max": 18446744073709551615}, 
-                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
-                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
-                {"cur": 8388608, "max": 18446744073709551615}, 
-                {"cur": 0, "max": 18446744073709551615}, 
-                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
-                {"cur": 515133, "max": 515133}, 
-                {"cur": 8192, "max": 100000}, 
-                {"cur": 65536, "max": 65536}, 
-                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
-                {"cur": 18446744073709551615, "max": 18446744073709551615}, 
-                {"cur": 515133, "max": 515133}, 
-                {"cur": 819200, "max": 819200}, 
-                {"cur": 0, "max": 0}, 
-                {"cur": 0, "max": 0}, 
-                {"cur": 18446744073709551615, "max": 18446744073709551615}]
+			{"cur": 18446744073709551615, "max": 18446744073709551615}, 
+			{"cur": 18446744073709551615, "max": 18446744073709551615}, 
+			{"cur": 8388608, "max": 18446744073709551615}, {"cur": 0, "max": 18446744073709551615}, 
+			{"cur": 18446744073709551615, "max": 18446744073709551615}, 
+			{"cur": 515133, "max": 515133}, 
+			{"cur": 8192, "max": 100000}, 
+			{"cur": 65536, "max": 65536}, 
+			{"cur": 18446744073709551615, "max": 18446744073709551615}, 
+			{"cur": 18446744073709551615, "max": 18446744073709551615}, 
+			{"cur": 515133, "max": 515133}, 
+			{"cur": 819200, "max": 819200}, 
+			{"cur": 0, "max": 0}, 
+			{"cur": 0, "max": 0}, 
+			{"cur": 18446744073709551615, "max": 18446744073709551615}]
 
 	def convert_to_dest_core(self, pgm_img, dest_regs, dest_tls): #, old_stack_tmpl, new_stack_tmpl):
 		het_log("Magic", dest_regs.magic) #TODO: check
@@ -554,75 +553,69 @@ class X8664Converter(Converter):
 		##fpregs
 		het_log("WARNING: floating point registers not fully supported")
 		dst_info["fpregs"]= {
-                    "cwd": 895,
-                    "swd": 0,
-                    "twd": 0,
-                    "fop": 0,
-                    "rip": 5248671,
-                    "rdp": 140735536563788,
-                    "mxcsr": 8064,
-                    "mxcsr_mask": 65535,
-                    "st_space": [ 0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 2147483648, 16386, 0],
-                    "xmm_space": [16, 48, 2343184048, 32767, 5384384, 0, 5261400, 0,
-                                  0, 0, 1, 0, 0, 0, 20, 0, 
-                                  0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 
-                                  0, 0, 0, 0, 0, 0, 0, 0], 
-                    "xsave": { "xstate_bv": 3,  
-                               "ymmh_space": [0, 0, 0, 0, 0, 0, 0, 0,
-                                              0, 0, 0, 0, 0, 0, 0, 0,
-                                              0, 0, 0, 0, 0, 0, 0, 0,
-                                              0, 0, 0, 0, 0, 0, 0, 0,
-                                              0, 0, 0, 0, 0, 0, 0, 0,
-                                              0, 0, 0, 0, 0, 0, 0, 0,
-                                              0, 0, 0, 0, 0, 0, 0, 0,
-                                              0, 0, 0, 0, 0, 0, 0, 0] }
-                } 
+			"cwd": 895, "swd": 0, "twd": 0, "fop": 0,
+			"rip": 5248671, "rdp": 140735536563788, "mxcsr": 8064, "mxcsr_mask": 65535,
+			"st_space": [ 0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 2147483648, 16386, 0],
+			"xmm_space": [16, 48, 2343184048, 32767, 5384384, 0, 5261400, 0,
+						0, 0, 1, 0, 0, 0, 20, 0, 
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0, 
+						0, 0, 0, 0, 0, 0, 0, 0], 
+			"xsave": { "xstate_bv": 3,  
+						"ymmh_space": [0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0] }
+		} 
 		#TLS
 		dst_info["tls"]=[
-                    {
-                        "entry_number": 12, 
-                        "base_addr": 0, 
-                        "limit": 0, 
-                        "seg_32bit": False, 
-                        "contents_h": False, 
-                        "contents_l": False, 
-                        "read_exec_only": True, 
-                        "limit_in_pages": False, 
-                        "seg_not_present": True, 
-                        "useable": False
-                    }, 
-                    {
-                        "entry_number": 13, 
-                        "base_addr": 0, 
-                        "limit": 0, 
-                        "seg_32bit": False, 
-                        "contents_h": False, 
-                        "contents_l": False, 
-                        "read_exec_only": True, 
-                        "limit_in_pages": False, 
-                        "seg_not_present": True, 
-                        "useable": False
-                    }, 
-                    {
-                        "entry_number": 14, 
-                        "base_addr": 0, 
-                        "limit": 0, 
-                        "seg_32bit": False, 
-                        "contents_h": False, 
-                        "contents_l": False, 
-                        "read_exec_only": True, 
-                        "limit_in_pages": False, 
-                        "seg_not_present": True, 
-                        "useable": False
-                    }
-                ]
+					{
+					"entry_number": 12, 
+					"base_addr": 0, 
+					"limit": 0, 
+					"seg_32bit": False, 
+					"contents_h": False, 
+					"contents_l": False, 
+					"read_exec_only": True, 
+					"limit_in_pages": False, 
+					"seg_not_present": True, 
+					"useable": False
+					}, 
+					{
+					"entry_number": 13, 
+					"base_addr": 0, 
+					"limit": 0, 
+					"seg_32bit": False, 
+					"contents_h": False, 
+					"contents_l": False, 
+					"read_exec_only": True, 
+					"limit_in_pages": False, 
+					"seg_not_present": True, 
+					"useable": False
+					}, 
+					{
+					"entry_number": 14, 
+					"base_addr": 0, 
+					"limit": 0, 
+					"seg_32bit": False, 
+					"contents_h": False, 
+					"contents_l": False, 
+					"read_exec_only": True, 
+					"limit_in_pages": False, 
+					"seg_not_present": True, 
+					"useable": False
+					}
+		]
 
 		#delete old entry and add the new one
 		del pgm_img['entries'][0]['ti_aarch64'] 
@@ -683,40 +676,40 @@ class X8664Converter(Converter):
 		return pgm_img
 
 	def get_vsyscall_template(self):
-        mm={"start": "0xffffffffff600000", 
-            "end": "0xffffffffff601000", 
-            "pgoff": 0, 
-            "shmid": 0, 
-            "prot": "PROT_READ | PROT_EXEC", 
-            "flags": "MAP_PRIVATE | MAP_ANON", 
-            "status": "VMA_AREA_VSYSCALL | VMA_ANON_PRIVATE", 
-            "fd": -1
-            }
+		mm={"start": "0xffffffffff600000", 
+			"end": "0xffffffffff601000", 
+			"pgoff": 0, 
+			"shmid": 0, 
+			"prot": "PROT_READ | PROT_EXEC", 
+			"flags": "MAP_PRIVATE | MAP_ANON", 
+			"status": "VMA_AREA_VSYSCALL | VMA_ANON_PRIVATE", 
+			"fd": -1
+			}
 		return mm, None, None
     
 	def get_vvar_template(self):
-        mm={"start": "0x7fff99ec7000", 
-            "end": "0x7fff99ec9000", 
-            "pgoff": 0, 
-            "shmid": 0, 
-            "prot": "PROT_READ", 
-            "flags": "MAP_PRIVATE | MAP_ANON", 
-            "status": "VMA_AREA_REGULAR | VMA_ANON_PRIVATE | VMA_AREA_VVAR", 
-            "fd": -1, 
-            "madv": "0x10000"
-            }
+		mm={"start": "0x7fff99ec7000", 
+			"end": "0x7fff99ec9000", 
+			"pgoff": 0, 
+			"shmid": 0, 
+			"prot": "PROT_READ", 
+			"flags": "MAP_PRIVATE | MAP_ANON", 
+			"status": "VMA_AREA_REGULAR | VMA_ANON_PRIVATE | VMA_AREA_VVAR", 
+			"fd": -1, 
+			"madv": "0x10000"
+			}
 		return mm, None, None
 
 	def get_vdso_template(self):
 		mm= {"start": "0x7fff99ec9000", 
-             "end": "0x7fff99ecb000", 
-             "pgoff": 0, 
-             "shmid": 0, 
-             "prot": "PROT_READ | PROT_EXEC", 
-             "flags": "MAP_PRIVATE | MAP_ANON", 
-             "status": "VMA_AREA_REGULAR | VMA_AREA_VDSO | VMA_ANON_PRIVATE", 
-             "fd": -1
-             }
+			"end": "0x7fff99ecb000", 
+			"pgoff": 0, 
+			"shmid": 0, 
+			"prot": "PROT_READ | PROT_EXEC", 
+			"flags": "MAP_PRIVATE | MAP_ANON", 
+			"status": "VMA_AREA_REGULAR | VMA_AREA_VDSO | VMA_ANON_PRIVATE", 
+			"fd": -1
+			}
 		pgmap= { "vaddr": "0x7fff99ec9000", "nr_pages": 2, "flags": "PE_PRESENT"}
 
 		dir_path=os.path.dirname(os.path.realpath(__file__))

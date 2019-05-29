@@ -446,7 +446,7 @@ class Converter():
 				het_log("src", dest_img, "dst", dst_file)
 				pycriu.images.dump(dest_img, open(dst_file, "w+"))
 		time_copy = time.time()
-		print (pid, (time_path - time_start), (time_core - time_path), (time_files - time_core), (time_mem - time_files), (time_copy - time_mem)
+		print (pid, (time_path - time_start), (time_core - time_path), (time_files - time_core), (time_mem - time_files), (time_copy - time_mem))
 		return handled_files
 
 	def recode(self, arch, directory, outdir, path_append):

@@ -376,7 +376,7 @@ class Converter():
 		pass
 
 	def __recode_pid(self, pid, arch, directory, outdir, onlyfiles, files_file, path_append):
-        time_start = time.time()
+		time_start = time.time()
 		### To convert we need some files #TODO: use magic to identify the files?
 		#TODO: use dict!
 		pagemap_file=""
@@ -403,13 +403,13 @@ class Converter():
 		##get path to binary
 		binary=self.get_binary(files_file, mm_file, path_append)
 		het_log("path to binary", binary, path_append)
-        time_path = time.time()
-        
+		time_path = time.time()
+		
 		#convert core, fs, memory (vdso)
 		dest_core=self.get_target_core(arch, binary, pages_file, pagemap_file, core_file, mm_file)
 		time_core = time.time()
 		dest_files=self.get_target_files(files_file, mm_file, path_append) #must be after get_target_core
-        time_files = time.time()
+		time_files = time.time()
 
 		bname=os.path.basename(pages_file)
 		dst_file=os.path.join(outdir, bname)

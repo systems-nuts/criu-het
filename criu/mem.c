@@ -1116,8 +1116,8 @@ err_read:
 	return 0;
 
 err_addr:
-	pr_err("Page entry address %lx outside of VMA %lx-%lx status %lx (task size: %lx)\n",
-	       va, (long)vma->e->start, (long)vma->e->end, vma->status, kdat.task_size);
+	pr_err("Page entry address %lx outside of VMA %lx-%lx status %x (task size: %lx)\n",
+	       va, (long)vma->e->start, (long)vma->e->end, vma->e->status, kdat.task_size);
 	return -1;
 }
 

@@ -652,10 +652,16 @@ class X8664Converter(Converter):
 
 	def get_target_core(self, architecture, binary, pages_file, pagemap_file, core_file, mm_file):
 		#old_stack_tmpl, new_stack_tmpl = self.__move_stack(pages_file, pagemap_file, core_file, mm_file)
+		target_start = time.time()
 		dest_regs=self.read_regs_from_memory(binary, architecture, pagemap_file, pages_file, X86Struct)
+		target_regs = time.time()
 		dest_tls=self.read_tls_from_memory(binary, architecture, pagemap_file, pages_file)
+		target_tls = time.time()
 		src_core=self.get_src_core(core_file)
+		target_src = time.time()
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)#, old_stack_tmpl, new_stack_tmpl)
+		target_dst = time.time()
+		print ((target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
 		het_log(dst_core['entries'][0]['thread_info'])
 		return dst_core
 

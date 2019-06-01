@@ -151,7 +151,7 @@ class Converter():
 		regs= self.read_struct_from_pages(pages_file, region_offset, struct_def)
 		rrfm_time3 = time.time()
 		
-		print ("rrfm", rrfm_time1 -rrfm_time, rrfm_time2 -rrfm_time1, rrfm_time3 -rrfm_time2)
+		het_log("rrfm", rrfm_time1 -rrfm_time, rrfm_time2 -rrfm_time1, rrfm_time3 -rrfm_time2)
 		return regs
 
 	def read_tls_from_memory(self, binary, architecture, pagemap_file, pages_file):
@@ -166,7 +166,7 @@ class Converter():
 			return
 		rrfm_time2 = time.time()
 		
-		print ("rtfm", rrfm_time -rrfm_time, rrfm_time2 -rrfm_time1)
+		het_log("rtfm", rrfm_time -rrfm_time, rrfm_time2 -rrfm_time1)
 		tls_addr=self.read_llong_from_pages(pages_file, region_offset)
 		het_log("!!!!tls_base", hex(tls_addr))
 		return tls_addr
@@ -521,7 +521,7 @@ class Converter():
 				het_log("done", fl)
 				
 		rec_t3 =time.time()
-		print("recode", (rec_t1 -rec_t0), (rec_t2 -rec_t1), (rec_t3 -rec_t2))
+		het_log("recode", (rec_t1 -rec_t0), (rec_t2 -rec_t1), (rec_t3 -rec_t2))
 
 ### FROM aarch64 TO x86_64
 class X8664Converter(Converter):
@@ -795,7 +795,7 @@ class X8664Converter(Converter):
 		page_tmp.close()
 		
 		gtm_t6 =time.time()
-		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
+		het_log("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
 		return mm_img, pagemap_img, dest_path
 
 
@@ -913,13 +913,13 @@ class Aarch64Converter(Converter):
 		target_regs = time.time()
 		dest_tls=self.read_tls_from_memory(binary, architecture, pagemap_file, pages_file)
 		target_tls = time.time()
-		print( "aarch64", binary, architecture, pagemap_file, pages_file)
+		het_log( "aarch64", binary, architecture, pagemap_file, pages_file)
 		
 		src_core=self.get_src_core(core_file)
 		target_src= time.time()
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)
 		target_dst = time.time()
-		print ("get_target_core aarch64", (target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
+		print("get_target_core aarch64", (target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
 		return dst_core
 	
 	def get_target_mem(self, mm_file, pagemap_file,  pages_file, dest_path):
@@ -947,7 +947,7 @@ class Aarch64Converter(Converter):
 		page_tmp.close()
 		
 		gtm_t6 =time.time()
-		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
+		het_log("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
 		return mm_img, pagemap_img, dest_path
 
 	def update_binary_size(self, files_img, new_size, idx):

@@ -942,7 +942,6 @@ class Aarch64Converter(Converter):
 		gtm_t4 =time.time()
 		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
 		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
-		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
 		
 		gtm_t5 =time.time()
 		page_tmp.close()

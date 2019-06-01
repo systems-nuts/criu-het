@@ -263,13 +263,13 @@ class Converter():
 		assert(page_nbr!=-1)
 
 		if(found):
-			original_size=os.stat(pages_path).st_size
-			het_log("orginal size", pages_path, original_size, page_nbr)
+			###original_size=os.stat(pages_path).st_size
+			###het_log("orginal size", pages_path, original_size, page_nbr)
 			page_offset=page_start_nbr*PAGE_SIZE
 			cnt_size=(page_nbr*PAGE_SIZE)
 			page_offset_end=page_offset+cnt_size
 
-			page_tmp=open(pages_path, "r+b")
+			###page_tmp=open(pages_path, "r+b")
 
 			#content to be returned
 			page_tmp.seek(page_offset)
@@ -288,12 +288,13 @@ class Converter():
 			new_size=original_size-(page_offset_end-page_offset)
 			het_log(original_size, new_size)
 			page_tmp.truncate(new_size)
-			page_tmp.close()
+			###page_tmp.close()
 
-		return ret_mm, ret_pmap, ret_cnt
+		###return ret_mm, ret_pmap, ret_cnt
+		return new_size
 
 
-	def __add_target_region(self, mm_img, pagemap_img, pages_path, mm_tmpl, pgmap_tmpl, cnt_tmpl):
+	def __add_target_region(self, mm_img, pagemap_img, page_tmp, original_size, mm_tmpl, pgmap_tmpl, cnt_tmpl):
 		het_log("adding", mm_tmpl)
 
 		#insert_vma
@@ -350,13 +351,13 @@ class Converter():
 		pagemap_img["entries"]=pages_list[:idx]+[pgmap_tmpl]+pages_list[idx:]
 
 		#where to insert in pages
-		original_size=os.stat(pages_path).st_size
+		###original_size=os.stat(pages_path).st_size
 		page_offset=page_start_nbr*PAGE_SIZE#+(page_nbr*PAGE_SIZE)
 		buff_size=(target_nbr*PAGE_SIZE)
-		het_log("orginal size", pages_path, original_size,target_nbr, page_offset)
+		#het_log("orginal size", pages_path, original_size, target_nbr, page_offset)
 
 		#insert in pages
-		page_tmp=open(pages_path, "r+b")
+		###page_tmp=open(pages_path, "r+b")
 		page_tmp.seek(page_offset)
 		buff=page_tmp.read(original_size-page_offset)
 		
@@ -365,13 +366,13 @@ class Converter():
 		assert(buff_size == len(cnt_tmpl))
 		page_tmp.write(cnt_tmpl)#, buff_size)
 		page_tmp.write(buff) #, original_size-page_offset_end)
-		page_tmp.close()
+		###page_tmp.close()
 
-		return
+		return (original_size + buff_size)
 
-	def add_target_region(self, mm_img, pagemap_img, pages_path, region_type):
+	def add_target_region(self, mm_img, pagemap_img, page_tmp, original_size, region_type):
 		mm_tmpl, pgmap_tmpl, cnt_tmpl = self.get_target_template(region_type)
-		self.__add_target_region(mm_img, pagemap_img, pages_path, mm_tmpl, pgmap_tmpl, cnt_tmpl)
+		self.__add_target_region(mm_img, pagemap_img, page_tmp, original_size, mm_tmpl, pgmap_tmpl, cnt_tmpl)
 
 	@abstractmethod
 	def get_vdso_template(self):
@@ -776,17 +777,24 @@ class X8664Converter(Converter):
 		copyfile(pages_file, dest_path)
 		
 		gtm_t2 =time.time()
-		self.remove_region_type(mm_img, pagemap_img, dest_path, "VDSO")
-		self.remove_region_type(mm_img, pagemap_img, dest_path, "VVAR")
-		self.remove_region_type(mm_img, pagemap_img, dest_path, "VSYSCALL")
+		original_size=os.stat(dest_path).st_size
+		page_tmp=open(dest_path, "r+b")
 		
 		gtm_t3 =time.time()
-		self.add_target_region(mm_img, pagemap_img, dest_path, "VDSO")
-		self.add_target_region(mm_img, pagemap_img, dest_path, "VVAR")
-		self.add_target_region(mm_img, pagemap_img, dest_path, "VSYSCALL")
+		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
+		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
+		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
 		
 		gtm_t4 =time.time()
-		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3))
+		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
+		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
+		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
+		
+		gtm_t5 =time.time()
+		page_tmp.close()
+		
+		gtm_t6 =time.time()
+		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
 		return mm_img, pagemap_img, dest_path
 
 
@@ -922,16 +930,24 @@ class Aarch64Converter(Converter):
 		copyfile(pages_file, dest_path)	
 
 		gtm_t2 =time.time()
-		self.remove_region_type(mm_img, pagemap_img, dest_path, "VDSO")
-		self.remove_region_type(mm_img, pagemap_img, dest_path, "VVAR")
-		self.remove_region_type(mm_img, pagemap_img, dest_path, "VSYSCALL")
+		original_size=os.stat(dest_path).st_size
+		page_tmp=open(dest_path, "r+b")
 		
 		gtm_t3 =time.time()
-		self.add_target_region(mm_img, pagemap_img, dest_path, "VDSO")
-		self.add_target_region(mm_img, pagemap_img, dest_path, "VVAR")
+		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
+		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
+		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
 		
 		gtm_t4 =time.time()
-		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3))
+		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
+		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
+		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
+		
+		gtm_t5 =time.time()
+		page_tmp.close()
+		
+		gtm_t6 =time.time()
+		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
 		return mm_img, pagemap_img, dest_path
 
 	def update_binary_size(self, files_img, new_size, idx):

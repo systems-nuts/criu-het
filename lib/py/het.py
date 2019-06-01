@@ -765,15 +765,25 @@ class X8664Converter(Converter):
 		return mm, pgmap, vdso
 
 	def get_target_mem(self, mm_file, pagemap_file,  pages_file, dest_path):
+		gtm_t0 =time.time()
 		mm_img=self.load_image_file(mm_file)
 		pagemap_img=self.load_image_file(pagemap_file)
-		copyfile(pages_file, dest_path)
+		
+		gtm_t1 =time.time()
 		self.remove_region_type(mm_img, pagemap_img, dest_path, "VDSO")
 		self.remove_region_type(mm_img, pagemap_img, dest_path, "VVAR")
 		self.remove_region_type(mm_img, pagemap_img, dest_path, "VSYSCALL")
+		
+		gtm_t2 =time.time()
 		self.add_target_region(mm_img, pagemap_img, dest_path, "VDSO")
 		self.add_target_region(mm_img, pagemap_img, dest_path, "VVAR")
 		self.add_target_region(mm_img, pagemap_img, dest_path, "VSYSCALL")
+		
+		gtm_t3 =time.time()
+		copyfile(pages_file, dest_path)
+		gtm_t4 =time.time()
+		
+		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3))
 		return mm_img, pagemap_img, dest_path
 
 

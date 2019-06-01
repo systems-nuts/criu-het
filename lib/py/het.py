@@ -19,6 +19,7 @@ from pwnlib.elf.elf import ELF
 from abc import ABCMeta, abstractmethod
 
 PAGE_SIZE=4096
+ELF_binaries ={}
 
 def het_log(*args):
 	pass #print(args)
@@ -65,7 +66,13 @@ class Converter():
 	### Common
 	def get_symbol_addr(self, binary, symbol):
 		###find address of the structure
-		e = ELF(binary)
+		###use a cache to avoid reloading the same binary multiple times
+		if binary in ELF_binaries:
+			e = ELF_binaries[binary]
+		else:
+			e = ELF(binary)
+			ELF_binaries[binary] = e
+		
 		addr=long(e.symbols[symbol]) 
 		het_log("found address", hex(addr))
 		return addr
@@ -124,23 +131,34 @@ class Converter():
 
 
 	def read_regs_from_memory(self, binary, architecture, pagemap_file, pages_file, struct_def):
+		rrfm_time = time.time()
 		addr=self.get_symbol_addr(binary, 'regs_dst')
+		rrfm_time1 = time.time()
 
 		region_offset=self.get_pages_offset(addr, pagemap_file)
 		if(region_offset==-1):
-			het_log("addr region not found")
+			print("rrfm: addr region not found", binary, architecture)
 			return
-
-		return self.read_struct_from_pages(pages_file, region_offset, struct_def)
+		rrfm_time2 = time.time()
+		regs= self.read_struct_from_pages(pages_file, region_offset, struct_def)
+		rrfm_time3 = time.time()
+		
+		print ("rrfm", rrfm_time1 -rrfm_time, rrfm_time2 -rrfm_time1, rrfm_time3 -rrfm_time2)
+		return regs
 
 	def read_tls_from_memory(self, binary, architecture, pagemap_file, pages_file):
+		rrfm_time = time.time()
 		addr=self.get_symbol_addr(binary, 'tls_dst')
+		rrfm_time1 = time.time()
 
 		region_offset=self.get_pages_offset(addr, pagemap_file)
 		if(region_offset==-1):
-			het_log("addr region not found")
+			rrfm_time2 = time.time()
+			print("rtfm: addr region not found", (rrfm_time1 - rrfm_time), (rrfm_time2 - rrfm_time1))
 			return
-
+		rrfm_time2 = time.time()
+		
+		print ("rtfm", rrfm_time -rrfm_time, rrfm_time2 -rrfm_time1)
 		tls_addr=self.read_llong_from_pages(pages_file, region_offset)
 		het_log("!!!!tls_base", hex(tls_addr))
 		return tls_addr
@@ -486,8 +504,8 @@ class Converter():
 				#copy not transformed files:
 				copyfile(src_file, dst_file)
 				het_log("done", fl)
-		
-	
+
+### FROM aarch64 TO x86_64
 class X8664Converter(Converter):
 	def __init__(self):
 		Converter.__init__(self)
@@ -657,12 +675,14 @@ class X8664Converter(Converter):
 		target_regs = time.time()
 		dest_tls=self.read_tls_from_memory(binary, architecture, pagemap_file, pages_file)
 		target_tls = time.time()
+		print( "x86_64", binary, architecture, pagemap_file, pages_file)
+		
 		src_core=self.get_src_core(core_file)
 		target_src = time.time()
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)#, old_stack_tmpl, new_stack_tmpl)
 		target_dst = time.time()
 		print ((target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
-		het_log(dst_core['entries'][0]['thread_info'])
+		#het_log(dst_core['entries'][0]['thread_info'])
 		return dst_core
 
 	def get_target_files(self, files_path, mm_file, path_append):
@@ -704,7 +724,10 @@ class X8664Converter(Converter):
 			"fd": -1, 
 			"madv": "0x10000"
 			}
-		return mm, None, None
+		pgmap= { "vaddr": "0x7fff99ec7000", "nr_pages": 2, "flags": "PE_PRESENT"}
+		# TODO do the same as below with the vdso 
+		
+		return mm, pgmap, None
 
 	def get_vdso_template(self):
 		mm= {"start": "0x7fff99ec9000", 
@@ -740,6 +763,9 @@ class X8664Converter(Converter):
 		self.add_target_region(mm_img, pagemap_img, dest_path, "VSYSCALL")
 		return mm_img, pagemap_img, dest_path
 
+
+
+### FROM x86_64 to aarch64
 class Aarch64Converter(Converter):
 	def __init__(self):
 		Converter.__init__(self)
@@ -800,7 +826,6 @@ class Aarch64Converter(Converter):
 		return mm, pgmap, vdso
 
 	def convert_to_dest_core(self, pgm_img, dest_regs, dest_tls):
-		#pgm_img=self.load_image_file(core_file)
 		###convert the type
 		pgm_img['entries'][0]['mtype']="AARCH64"
 
@@ -855,6 +880,8 @@ class Aarch64Converter(Converter):
 		target_regs = time.time()
 		dest_tls=self.read_tls_from_memory(binary, architecture, pagemap_file, pages_file)
 		target_tls = time.time()
+		print( "aarch64", binary, architecture, pagemap_file, pages_file)
+		
 		src_core=self.get_src_core(core_file)
 		target_src= time.time()
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)

@@ -478,7 +478,8 @@ class Converter():
 		###Generate output directory
 		if not os.path.exists(outdir):
 			os.makedirs(outdir)
-
+		
+		rec_t0 =time.time()
 		onlyfiles = [f for f in listdir(directory) if (isfile(join(directory, f)) and "img" in f)]
 		pstree_file=None
 		files_file=None
@@ -492,14 +493,16 @@ class Converter():
 				bname=os.path.basename(files_file_orig)
 				files_file=os.path.join(outdir, bname)
 				copyfile(files_file_orig, files_file)
-
 		assert(pstree_file)
 		assert(files_file)
+		
+		rec_t1 =time.time()
 		for _pid in self.get_all_pids(pstree_file):
 			ret=self.__recode_pid(_pid, arch, directory, outdir, onlyfiles, files_file, path_append)
 			handled_files.extend(ret)
 		
 		#copy not transformed files
+		rec_t2 =time.time()
 		het_log("copying remaining files")
 		for fl in onlyfiles:
 			het_log("copying...", fl)
@@ -511,6 +514,9 @@ class Converter():
 				#copy not transformed files:
 				copyfile(src_file, dst_file)
 				het_log("done", fl)
+				
+		rec_t3 =time.time()
+		print("recode", (rec_t1 -rec_t0), (rec_t2 -rec_t1), (rec_t3 -rec_t2))
 
 ### FROM aarch64 TO x86_64
 class X8664Converter(Converter):

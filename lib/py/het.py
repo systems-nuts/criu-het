@@ -20,6 +20,7 @@ from abc import ABCMeta, abstractmethod
 
 PAGE_SIZE=4096
 ELF_binaries ={}
+IMG_files ={}
 
 def het_log(*args):
 	pass #print(args)
@@ -78,11 +79,17 @@ class Converter():
 		return addr
 
 	def load_image_file(self, file_path):
+		###use a cache to avoid reloading the same file multiple times
+		if file_path in IMG_files:
+			return IMG_files[file_path]
+		
 		try:
 			pgm_img = pycriu.images.load(open(file_path, 'rb'), pretty=True)
 		except pycriu.images.MagicException as exc:
 			print("Error reading", file_path)
 			sys.exit(1)
+			
+		IMG_files[file_path] = pgm_img
 		return pgm_img
 
 	def get_pages_offset(self, addr, pagemap_file):
@@ -681,7 +688,7 @@ class X8664Converter(Converter):
 		target_src = time.time()
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)#, old_stack_tmpl, new_stack_tmpl)
 		target_dst = time.time()
-		print ((target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
+		print ("get_target_core x86_64", (target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
 		#het_log(dst_core['entries'][0]['thread_info'])
 		return dst_core
 
@@ -826,15 +833,19 @@ class Aarch64Converter(Converter):
 		return mm, pgmap, vdso
 
 	def convert_to_dest_core(self, pgm_img, dest_regs, dest_tls):
+		Tbase = time.time()
 		###convert the type
 		pgm_img['entries'][0]['mtype']="AARCH64"
 
 		###convert thread_info
+		Tctdc = time.time()
 		src_info=pgm_img['entries'][0]['thread_info']
 		dst_info=OrderedDict() 
 		dst_info["clear_tid_addr"]=src_info["clear_tid_addr"]
 		dst_info["tls"]=dest_tls
+		
 		##gpregs
+		Tctdc1 = time.time()
 		dst_info["gpregs"]=OrderedDict()
 		#regs
 		reg_list=list()
@@ -855,9 +866,9 @@ class Aarch64Converter(Converter):
 		dst_info["fpsimd"]["vregs"]=vreg_list
 		dst_info["fpsimd"]["fpsr"]=0 #?
 		dst_info["fpsimd"]["fpcr"]=0 #?
-		
 
 		#delete old entry and add the new one
+		Tctdc2 = time.time()
 		del pgm_img['entries'][0]['thread_info']
 		pgm_img['entries'][0]['ti_aarch64'] = dst_info
 
@@ -870,7 +881,8 @@ class Aarch64Converter(Converter):
 		#pgm_img['entries'][0]['thread_core']['creds']['suid'] = 1004
 		#pgm_img['entries'][0]['thread_core']['creds']['fsuid'] = 1004
 		
-
+		Tctdc3 = time.time()
+		print ("convert_to_dest_core", Tctdc -Tbase, Tctdc1 - Tctdc, Tctdc2 - Tctdc1, Tctdc3 - Tctdc2)
 		return pgm_img
 		
 	
@@ -886,7 +898,7 @@ class Aarch64Converter(Converter):
 		target_src= time.time()
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)
 		target_dst = time.time()
-		print ((target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
+		print ("get_target_core aarch64", (target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
 		return dst_core
 	
 	def get_target_mem(self, mm_file, pagemap_file,  pages_file, dest_path):

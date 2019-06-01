@@ -7,6 +7,7 @@ import json
 import sys
 import pycriu
 import copy
+import pyfastcopy
 import shutil
 import tempfile
 import time
@@ -225,6 +226,7 @@ class Converter():
 			if region_type in vma["status"]:
 				region_start=int(vma["start"], 16)
 				region_end=int(vma["end"], 16)
+				
 				het_log("removing vma",mm_img["entries"][0]["vmas"][idx])
 				ret_mm = copy.deepcopy(mm_img["entries"][0]["vmas"][idx])
 				del mm_img["entries"][0]["vmas"][idx]
@@ -251,6 +253,7 @@ class Converter():
 			page_nbr = pgmap['nr_pages']
 			if addr >= region_start and addr <= region_end:
 				found=True
+				
 				het_log("removing pagemap", pagemap_img["entries"][idx])
 				ret_pmap = copy.deepcopy(pagemap_img["entries"][idx])
 				del pagemap_img["entries"][idx]
@@ -770,19 +773,19 @@ class X8664Converter(Converter):
 		pagemap_img=self.load_image_file(pagemap_file)
 		
 		gtm_t1 =time.time()
+		copyfile(pages_file, dest_path)
+		
+		gtm_t2 =time.time()
 		self.remove_region_type(mm_img, pagemap_img, dest_path, "VDSO")
 		self.remove_region_type(mm_img, pagemap_img, dest_path, "VVAR")
 		self.remove_region_type(mm_img, pagemap_img, dest_path, "VSYSCALL")
 		
-		gtm_t2 =time.time()
+		gtm_t3 =time.time()
 		self.add_target_region(mm_img, pagemap_img, dest_path, "VDSO")
 		self.add_target_region(mm_img, pagemap_img, dest_path, "VVAR")
 		self.add_target_region(mm_img, pagemap_img, dest_path, "VSYSCALL")
 		
-		gtm_t3 =time.time()
-		copyfile(pages_file, dest_path)
 		gtm_t4 =time.time()
-		
 		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3))
 		return mm_img, pagemap_img, dest_path
 
@@ -914,20 +917,20 @@ class Aarch64Converter(Converter):
 		gtm_t0 =time.time()
 		mm_img=self.load_image_file(mm_file)
 		pagemap_img=self.load_image_file(pagemap_file)
-		
+
 		gtm_t1 =time.time()
+		copyfile(pages_file, dest_path)	
+
+		gtm_t2 =time.time()
 		self.remove_region_type(mm_img, pagemap_img, dest_path, "VDSO")
 		self.remove_region_type(mm_img, pagemap_img, dest_path, "VVAR")
 		self.remove_region_type(mm_img, pagemap_img, dest_path, "VSYSCALL")
 		
-		gtm_t2 =time.time()
+		gtm_t3 =time.time()
 		self.add_target_region(mm_img, pagemap_img, dest_path, "VDSO")
 		self.add_target_region(mm_img, pagemap_img, dest_path, "VVAR")
 		
-		gtm_t3 =time.time()
-		copyfile(pages_file, dest_path)
 		gtm_t4 =time.time()
-		
 		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3))
 		return mm_img, pagemap_img, dest_path
 

@@ -261,7 +261,8 @@ class Converter():
 			idx+=1
 			page_start_nbr+=page_nbr
 		assert(page_nbr!=-1)
-
+		
+		new_size=0
 		if(found):
 			###original_size=os.stat(pages_path).st_size
 			###het_log("orginal size", pages_path, original_size, page_nbr)

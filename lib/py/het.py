@@ -212,7 +212,7 @@ class Converter():
 		shutil.copy(src_file, temp_file)
 		return temp_file
 
-	def remove_region_type(self, mm_img, pagemap_img, pages_path, region_type):
+	def remove_region_type(self, mm_img, pagemap_img, page_tmp, original_size, region_type):
 		#return what has been removed
 		ret_mm=None
 		ret_pmap=None

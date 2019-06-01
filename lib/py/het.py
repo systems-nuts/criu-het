@@ -833,19 +833,16 @@ class Aarch64Converter(Converter):
 		return mm, pgmap, vdso
 
 	def convert_to_dest_core(self, pgm_img, dest_regs, dest_tls):
-		Tbase = time.time()
 		###convert the type
 		pgm_img['entries'][0]['mtype']="AARCH64"
 
 		###convert thread_info
-		Tctdc = time.time()
 		src_info=pgm_img['entries'][0]['thread_info']
 		dst_info=OrderedDict() 
 		dst_info["clear_tid_addr"]=src_info["clear_tid_addr"]
 		dst_info["tls"]=dest_tls
 		
 		##gpregs
-		Tctdc1 = time.time()
 		dst_info["gpregs"]=OrderedDict()
 		#regs
 		reg_list=list()
@@ -868,7 +865,6 @@ class Aarch64Converter(Converter):
 		dst_info["fpsimd"]["fpcr"]=0 #?
 
 		#delete old entry and add the new one
-		Tctdc2 = time.time()
 		del pgm_img['entries'][0]['thread_info']
 		pgm_img['entries'][0]['ti_aarch64'] = dst_info
 
@@ -880,9 +876,6 @@ class Aarch64Converter(Converter):
 		#pgm_img['entries'][0]['thread_core']['creds']['euid'] = 1004
 		#pgm_img['entries'][0]['thread_core']['creds']['suid'] = 1004
 		#pgm_img['entries'][0]['thread_core']['creds']['fsuid'] = 1004
-		
-		Tctdc3 = time.time()
-		print ("convert_to_dest_core", Tctdc -Tbase, Tctdc1 - Tctdc, Tctdc2 - Tctdc1, Tctdc3 - Tctdc2)
 		return pgm_img
 		
 	

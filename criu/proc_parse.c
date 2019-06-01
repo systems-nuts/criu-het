@@ -819,6 +819,13 @@ int parse_smaps(pid_t pid, struct vm_area_list *vma_area_list,
 				goto err;
 		} else if (vma_entry_is(vma_area->e, VMA_AREA_AIORING))
 			vma_area_list->nr_aios++;
+		
+		if (vma_area->e->prot == 0 &&
+				(vma_area->e->flags & MAP_PRIVATE) && 
+				vma_area->e->end==MAX_VMA_ADDR) { //This value depends on the architecture
+			xfree(vma_area);
+			break;
+        }
 	}
 
 	vma_area = NULL;

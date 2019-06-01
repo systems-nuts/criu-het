@@ -40,5 +40,7 @@ static inline unsigned page_shift(void)
 extern unsigned page_size(void);
 #define PAGE_SIZE page_size()
 
+#define MAX_VMA_ADDR (0x1000000000000)
+
 #endif /* CR_NOGLIBC */
 #endif /* __CR_ASM_PAGE_H__ */

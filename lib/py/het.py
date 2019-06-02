@@ -262,7 +262,7 @@ class Converter():
 			page_start_nbr+=page_nbr
 		assert(page_nbr!=-1)
 		
-		new_size=-1
+		new_size=original_size
 		if(found):
 			###original_size=os.stat(pages_path).st_size
 			###het_log("orginal size", pages_path, original_size, page_nbr)
@@ -314,15 +314,15 @@ class Converter():
 					pvend=int(prev_vma["end"],16)
 					if(pvend > region_start):
 						het_log("error: could not insert region", hex(vma_start), hex(vma_end), hex(region_start), hex(region_end), hex(pvend))
-						return
+						return -1
 				break
 			idx+=1
 		het_log("found vma at idx", idx, len(vmas))
 		mm_img["entries"][0]["vmas"]=vmas[:idx]+[mm_tmpl]+vmas[idx:]
 
-		#insert pgmap if any
+		#insert pgmap if any (not an error)
 		if not pgmap_tmpl:
-			return
+			return original_size
 
 		#pagemap
 		idx=0
@@ -373,7 +373,7 @@ class Converter():
 
 	def add_target_region(self, mm_img, pagemap_img, page_tmp, original_size, region_type):
 		mm_tmpl, pgmap_tmpl, cnt_tmpl = self.get_target_template(region_type)
-		self.__add_target_region(mm_img, pagemap_img, page_tmp, original_size, mm_tmpl, pgmap_tmpl, cnt_tmpl)
+		return self.__add_target_region(mm_img, pagemap_img, page_tmp, original_size, mm_tmpl, pgmap_tmpl, cnt_tmpl)
 
 	@abstractmethod
 	def get_vdso_template(self):
@@ -729,7 +729,7 @@ class X8664Converter(Converter):
 		return mm, None, None
     
 	def get_vvar_template(self):
-		mm={"start": "0x7fff99ec7000", 
+		mm={"start": "0x7fff99ec6000", 
 			"end": "0x7fff99ec9000", 
 			"pgoff": 0, 
 			"shmid": 0, 
@@ -739,10 +739,10 @@ class X8664Converter(Converter):
 			"fd": -1, 
 			"madv": "0x10000"
 			}
-		pgmap= { "vaddr": "0x7fff99ec7000", "nr_pages": 2, "flags": "PE_PRESENT"}
-		# TODO do the same as below with the vdso 
+		#pgmap= { "vaddr": "0x7fff99ec7000", "nr_pages": 3, "flags": "PE_PRESENT"}
+		### vvar is not dumped in the pagemap either neither in the page list -- TODO need to check the source code
 		
-		return mm, pgmap, None
+		return mm, None, None
 
 	def get_vdso_template(self):
 		mm= {"start": "0x7fff99ec9000", 
@@ -788,10 +788,10 @@ class X8664Converter(Converter):
 		ret_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
 		if (ret_size > 0): 
 			ret_size = self.add_target_region(mm_img, pagemap_img, page_tmp, ret_size, "VVAR")
-			if (ret_size > 0):
-				original_size = ret_size
+			if (ret_size > 0): original_size = ret_size
 				
-		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
+		ret_size= self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
+		print("page size is", ret_size, original_size)
 		
 		gtm_t5 =time.time()
 		page_tmp.close()
@@ -950,7 +950,8 @@ class Aarch64Converter(Converter):
 			ret_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
 			if (ret_size > 0): original_size = ret_size
 		
-		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
+		ret_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
+		print("page size is", ret_size, original_size)
 		
 		gtm_t5 =time.time()
 		page_tmp.close()

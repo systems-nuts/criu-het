@@ -704,20 +704,17 @@ class X8664Converter(Converter):
 		return dst_core
 
 	def get_target_files(self, files_path, mm_file, path_append):
-		pgm_img=self.load_image_file(files_path)
-		fid, idx, path=self.get_binary_info(files_path, mm_file, path_append)
-		path_x86_64=path+"_x86-64"
-		path_aarch64=path+"_aarch64"
+		files_img=self.load_image_file(files_path)
+		fid, idx, bin_path=self.get_binary_info(files_path, mm_file, path_append)
+		path_x86_64=bin_path+"_x86-64"
+		path_aarch64=bin_path+"_aarch64"
 		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
+		
 		#copy file to appropriate arch
-		copyfile(path_x86_64, path)
-		#set size
+		copyfile(path_x86_64, bin_path)
 		statinfo = os.stat(path_x86_64)
-		pgm_img["entries"][idx]["reg"]["size"] = statinfo.st_size
-		#hack: create tmp file; update: on target machine!!
-		#open("/tmp/stack-transform.log", 'a').close()
-
-		return pgm_img
+		files_img["entries"][idx]["reg"]["size"] = statinfo.st_size
+		return files_img
 
 	def get_vsyscall_template(self):
 		mm={"start": "0xffffffffff600000", 
@@ -835,6 +832,8 @@ class Aarch64Converter(Converter):
 			    "flags": "MAP_PRIVATE | MAP_ANON", 
 			    "status": "VMA_AREA_REGULAR | VMA_ANON_PRIVATE | VMA_AREA_VVAR", 
 			    "fd": -1}
+		
+		###TODO where is pgmap= ?
 
 		return mm, None, None
 
@@ -950,24 +949,18 @@ class Aarch64Converter(Converter):
 		het_log("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
 		return mm_img, pagemap_img, dest_path
 
-	def update_binary_size(self, files_img, new_size, idx):
-		files_img["entries"][idx]["reg"]["size"] = new_size
-		return files_img
-
-	def copy_binary_to_target(self, bin_path):
-		path_x86_64=bin_path+"_x86-64"
-		path_aarch64=bin_path+"_aarch64"
-		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
-		#copy file to appropriate arch
-		copyfile(path_aarch64, bin_path)
-		statinfo = os.stat(path_aarch64)
-		return statinfo.st_size
-
 	def get_target_files(self, files_path, mm_file, path_append):
 		files_img=self.load_image_file(files_path)
 		fid, idx, bin_path=self.get_binary_info(files_path, mm_file, path_append)
-		new_size = self.copy_binary_to_target(bin_path)
-		return self.update_binary_size(files_img, new_size, idx)
+		path_x86_64=bin_path+"_x86-64"
+		path_aarch64=bin_path+"_aarch64"
+		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
+
+		#copy file to appropriate arch
+		copyfile(path_aarch64, bin_path)
+		statinfo = os.stat(path_aarch64)
+		files_img["entries"][idx]["reg"]["size"] = statinfo.st_size
+		return files_img
 
 
 

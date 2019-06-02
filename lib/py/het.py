@@ -11,6 +11,8 @@ import pyfastcopy
 import shutil
 import tempfile
 import time
+import subprocess
+
 from os import listdir
 from os.path import isfile, join
 from collections import OrderedDict
@@ -18,10 +20,12 @@ from ctypes import *
 from shutil import copyfile
 from pwnlib.elf.elf import ELF
 from abc import ABCMeta, abstractmethod
+from subprocess import Popen, PIPE
 
 PAGE_SIZE=4096
 ELF_binaries ={}
 IMG_files ={}
+binary_symbols ={}
 
 def het_log(*args):
 	pass #print(args)
@@ -67,6 +71,18 @@ class Converter():
 
 	### Common
 	def get_symbol_addr(self, binary, symbol):
+		if len(binary_symbols) == 0:
+			session = subprocess.Popen(['nm', binary], stdout=PIPE, stderr=PIPE)
+			_stdout, _stderr = session.communicate()
+			nm_symbols = _stdout.split('\n')
+			for nm_symbol in nm_symbols:
+				sentry = nm_symbol.split()
+				if sentry is not None:
+					if len(sentry) >2:
+						binary_symbols[sentry[2]] = sentry[0]
+		return long(binary_symbols[symbol], 16)
+
+	def __get_symbol_addr(self, binary, symbol):
 		###find address of the structure
 		###use a cache to avoid reloading the same binary multiple times
 		if binary in ELF_binaries:

@@ -396,7 +396,7 @@ class Converter():
 			return self.get_vsyscall_template()
 
 	@abstractmethod
-	def get_target_core(self, arch, binary, pages_file, pagemap_file, core_file, mm_file):
+	def get_target_core(self, arch, binary, pages_file, pagemap_file, core_file):
 		pass
 	@abstractmethod
 	def get_target_files(self, files_path, mm_file, path_append):
@@ -436,7 +436,7 @@ class Converter():
 		time_path = time.time()
 		
 		#convert core, fs, memory (vdso)
-		dest_core=self.get_target_core(arch, binary, pages_file, pagemap_file, core_file, mm_file)
+		dest_core=self.get_target_core(arch, binary, pages_file, pagemap_file, core_file)
 		time_core = time.time()
 		dest_files=self.get_target_files(files_file, mm_file, path_append) #must be after get_target_core
 		time_files = time.time()
@@ -447,7 +447,7 @@ class Converter():
 		time_mem = time.time()
 
 		handled_files=[]
-		#populate with files
+		#populate with files TODO must handle pid (see above)
 		for fl in onlyfiles:
 			src_file=None
 			if "core" in fl:
@@ -686,7 +686,7 @@ class X8664Converter(Converter):
 		self.__add_target_region(mm_img, pagemap_img, pages_tmp, new_mm_tmpl, pgmap_tmpl, cnt_tmpl)
 	"""		
 
-	def get_target_core(self, architecture, binary, pages_file, pagemap_file, core_file, mm_file):
+	def get_target_core(self, architecture, binary, pages_file, pagemap_file, core_file):
 		#old_stack_tmpl, new_stack_tmpl = self.__move_stack(pages_file, pagemap_file, core_file, mm_file)
 		target_start = time.time()
 		dest_regs=self.read_regs_from_memory(binary, architecture, pagemap_file, pages_file, X86Struct)
@@ -907,7 +907,7 @@ class Aarch64Converter(Converter):
 		return pgm_img
 		
 	
-	def get_target_core(self, architecture, binary, pages_file, pagemap_file, core_file, mm_file):
+	def get_target_core(self, architecture, binary, pages_file, pagemap_file, core_file):
 		target_start = time.time()
 		dest_regs=self.read_regs_from_memory(binary, architecture, pagemap_file, pages_file, Aarch64Struct)
 		target_regs = time.time()

@@ -125,8 +125,7 @@ class Converter():
 		#return
 		ret=fd.readinto(dest_regs) 
 		het_log("size", sizeof(dest_regs), "ret", ret)
-		print("magic", hex(dest_regs.magic))
-		#het_log dest_regs
+		het_log("magic", hex(dest_regs.magic))
 		return dest_regs
 
 	def read_llong_from_pages(self, pages_file, region_offset):
@@ -693,13 +692,13 @@ class X8664Converter(Converter):
 		target_regs = time.time()
 		dest_tls=self.read_tls_from_memory(binary, architecture, pagemap_file, pages_file)
 		target_tls = time.time()
-		print( "x86_64", binary, architecture, pagemap_file, pages_file)
+		het_log( "x86_64", binary, architecture, pagemap_file, pages_file)
 		
 		src_core=self.get_src_core(core_file)
 		target_src = time.time()
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)#, old_stack_tmpl, new_stack_tmpl)
 		target_dst = time.time()
-		print ("get_target_core x86_64", (target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
+		het_log("get_target_core x86_64", (target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
 		#het_log(dst_core['entries'][0]['thread_info'])
 		return dst_core
 
@@ -922,7 +921,7 @@ class Aarch64Converter(Converter):
 		target_src= time.time()
 		dst_core=self.convert_to_dest_core(src_core, dest_regs, dest_tls)
 		target_dst = time.time()
-		print("get_target_core aarch64", (target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
+		het_log("get_target_core aarch64", (target_regs - target_start), (target_tls - target_regs), (target_src - target_tls), (target_dst -target_src))
 		return dst_core
 	
 	def get_target_mem(self, mm_file, pagemap_file,  pages_file, dest_path):

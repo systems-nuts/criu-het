@@ -234,8 +234,8 @@ class Converter():
 			idx+=1
 
 		if region_start==-1:
-			het_log("no region found")
-			return None, None, None
+			print("no region found", region_type)
+			return -1
 
 		het_log(hex(region_start), hex(region_end))
 		
@@ -262,7 +262,7 @@ class Converter():
 			page_start_nbr+=page_nbr
 		assert(page_nbr!=-1)
 		
-		new_size=0
+		new_size=-1
 		if(found):
 			###original_size=os.stat(pages_path).st_size
 			###het_log("orginal size", pages_path, original_size, page_nbr)
@@ -779,13 +779,18 @@ class X8664Converter(Converter):
 		page_tmp=open(dest_path, "r+b")
 		
 		gtm_t3 =time.time()
-		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
-		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
-		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
+		ret_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
+		if (ret_size > 0): 
+			ret_size = self.add_target_region(mm_img, pagemap_img, page_tmp, ret_size, "VDSO")
+			if (ret_size > 0): original_size = ret_size
 		
 		gtm_t4 =time.time()
-		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
-		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
+		ret_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
+		if (ret_size > 0): 
+			ret_size = self.add_target_region(mm_img, pagemap_img, page_tmp, ret_size, "VVAR")
+			if (ret_size > 0):
+				original_size = ret_size
+				
 		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
 		
 		gtm_t5 =time.time()

@@ -797,7 +797,7 @@ class X8664Converter(Converter):
 		page_tmp.close()
 		
 		gtm_t6 =time.time()
-		het_log("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
+		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
 		return mm_img, pagemap_img, dest_path
 
 
@@ -939,19 +939,24 @@ class Aarch64Converter(Converter):
 		page_tmp=open(dest_path, "r+b")
 		
 		gtm_t3 =time.time()
-		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
-		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
-		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
+		ret_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
+		if (ret_size > 0):
+			ret_size = self.add_target_region(mm_img, pagemap_img, page_tmp, ret_size, "VDSO")
+			if (ret_size > 0): original_size = ret_size
 		
 		gtm_t4 =time.time()
-		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VDSO")
-		original_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
+		ret_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
+		if (ret_size > 0):
+			ret_size = self.add_target_region(mm_img, pagemap_img, page_tmp, original_size, "VVAR")
+			if (ret_size > 0): original_size = ret_size
+		
+		original_size = self.remove_region_type(mm_img, pagemap_img, page_tmp, original_size, "VSYSCALL")
 		
 		gtm_t5 =time.time()
 		page_tmp.close()
 		
 		gtm_t6 =time.time()
-		het_log("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
+		print("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
 		return mm_img, pagemap_img, dest_path
 
 	def get_target_files(self, files_path, mm_file, path_append):

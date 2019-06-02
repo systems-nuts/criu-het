@@ -710,7 +710,7 @@ class X8664Converter(Converter):
 		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
 		
 		#copy file to appropriate arch
-		copyfile(path_x86_64, bin_path)
+		#copyfile(path_x86_64, bin_path)
 		statinfo = os.stat(path_x86_64)
 		files_img["entries"][idx]["reg"]["size"] = statinfo.st_size
 		return files_img
@@ -965,7 +965,7 @@ class Aarch64Converter(Converter):
 		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
 
 		#copy file to appropriate arch
-		copyfile(path_aarch64, bin_path)
+		#copyfile(path_aarch64, bin_path)
 		statinfo = os.stat(path_aarch64)
 		files_img["entries"][idx]["reg"]["size"] = statinfo.st_size
 		return files_img

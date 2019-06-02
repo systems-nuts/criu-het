@@ -16,6 +16,6 @@
 #define PAGE_PFN(addr)	((addr) / PAGE_SIZE)
 #define page_size()	PAGE_SIZE
 
-#define MAX_VMA_ADDR (0x800000000000 - PAGE_SIZE)
+#define MAX_VMA_ADDR	(0x800000000000 - PAGE_SIZE)
 
 #endif /* __CR_ASM_PAGE_H__ */

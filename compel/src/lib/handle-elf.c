@@ -158,6 +158,7 @@ int __handle_elf(void *mem, size_t size)
 	pr_debug("Header\n");
 	pr_debug("------------\n");
 	pr_debug("\ttype 0x%x machine 0x%x version 0x%x\n",
+	//fprintf(stderr,"%s: type 0x%x machine 0x%x version 0x%x\n", __func__,
 		 (unsigned)hdr->e_type, (unsigned)hdr->e_machine,
 		 (unsigned)hdr->e_version);
 

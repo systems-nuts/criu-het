@@ -6,6 +6,13 @@
 #include <sys/syscall.h>
 #include <sys/prctl.h>
 
+
+
+//antonio popcorn
+#include <sys/ptrace.h>
+
+
+
 #include "types.h"
 #include "cr_options.h"
 #include "servicefd.h"
@@ -511,6 +518,14 @@ out:
 	return exit_code;
 }
 
+
+//TODO fix the following refactor
+	int save_task_regs_aarch64(void *x, unsigned long *values);
+	int arch_alloc_thread_info_aarch64(CoreEntry *core);
+	void arch_free_thread_info_aarch64(CoreEntry *core);
+
+
+
 int parasite_dump_pages_seized(struct pstree_item *item,
 		struct vm_area_list *vma_area_list,
 		struct mem_dump_ctl *mdc,
@@ -540,13 +555,122 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 		pr_err("fault: Dump VMA pages failure!\n");
 		return -1;
 	}
-
+	
+	// Antonio notes: here we cannot interrupt the process, the parasite gets upset
+	
 	ret = __parasite_dump_pages_seized(item, pargs, vma_area_list, mdc, ctl);
 	if (ret) {
 		pr_err("Can't dump page with parasite\n");
 		/* Parasite will unprotect VMAs after fail in fini() */
 		return ret;
 	}
+
+		
+	/*****************************************************************************/
+	/* experimental code, before dumping we read the variables for core -- Antonio TODO*/
+	
+	//TODO if foreign architecture check
+	
+/*
+>>>arm is 34 *8b + 32 *16b
+class Aarch64Struct(Structure):
+	_fields_ = [("magic", c_ulonglong), ("sp", c_ulonglong), ("pc", c_ulonglong), ("regs", Reg64 * 31), ("vregs", Reg128 * 32)]
+	
+>>>x86 is 16 *8b + 8 *8b + 16 *16b + 8 * longdouble + 6*4b + 1 * 8b
+class X86Struct(Structure):
+	_fields_ = [("magic", c_ulonglong), ("rip", c_ulonglong)]
+	gregs=["rax","rdx","rcx","rbx","rsi","rdi","rbp","rsp","r8","r9","r10","r11","r12","r13","r14","r15"]
+	for grn in gregs:
+		_fields_.append((grn, c_ulonglong))
+	_fields_.append(("mmx", Reg64*8)) 
+	_fields_.append(("xmm", Reg128*16)) 
+	_fields_.append(("st", c_longdouble*8)) 
+	csregs=["cs","ss","ds","es","fs","gs"]
+	for grn in csregs:
+		_fields_.append((grn, c_uint32))
+	_fields_.append(("rflags", c_uint64)) 	
+	*/
+#if 0
+	fprintf(stderr, "item %d\n", item->pid->real);
+	
+	ptrace(PTRACE_INTERRUPT, item->pid->real);
+	
+	if (item->regs && item->tls) { //this is popcorn
+		unsigned long value; int i;
+		// let's try with ptrace, read regs
+		for (i =0; i<(32+64) ; i++) { //going to arm
+			errno = 0;
+			value = ptrace(PTRACE_PEEKDATA, item->pid->real,
+						   (unsigned long)(item->regs) + (i *sizeof(unsigned long)));
+			if (value == -1 && errno != 0)
+				perror ("trace ");
+			fprintf(stderr, "regs[%d]: 0x%lx\n", i, value);
+		}
+			
+		value = ptrace(PTRACE_PEEKDATA, item->pid->real, (unsigned long)(item->tls));
+		fprintf(stderr, "tls: 0x%lx\n", value);
+	}
+	ptrace (PTRACE_CONT, item->pid->real);
+#endif
+
+//check if foreign architecture is requested TODO assume it is required to do aarch64
+
+	CoreEntry *x = item->core[0];
+	
+	if (x->ti_aarch64 == 0) {
+		int _ret;
+		if ((_ret = arch_alloc_thread_info_aarch64(x)) == -1) {
+			pr_err("Cannot arch_alloc_thread_info_aarch64\n");
+			goto err_foreign_arch;
+		}
+	}
+	
+	//printf("regs: 0x%lx tls: 0x%lx\n",item->regs,item->tls ); // already printed
+	char buff1[64];
+	unsigned long * values = xmalloc((34+64) * sizeof(long)); //TODO put this somewhere else 
+	memset(buff1, 0, 64);
+	sprintf (buff1,"/proc/%d/mem", item->pid->real);
+	int mem_fd = open(buff1, O_RDONLY);
+	if (mem_fd <0) {
+		pr_err("Cannot open to %s\n", buff1);
+		arch_free_thread_info_aarch64(x);
+		goto err_foreign_arch;
+	}
+	lseek(mem_fd, item->regs, SEEK_SET);
+	int _ret = read(mem_fd,  values, (34+64) *sizeof(long));
+	if (_ret < 0) {
+		 perror("Cannot read mem");
+		 close (mem_fd);
+		 arch_free_thread_info_aarch64(x);
+		 goto err_foreign_arch;
+	}
+	//int iii;
+	//	printf("_ret: %d\n", _ret);	
+	//for( iii= 0; iii< (34+64); iii+=2)
+	//	printf ("%d: 0x%lx\t%d: 0x%lx\n", iii, values[iii], iii+1, values[iii+1]);
+	if (values[0] != 0xaabcbdeadbeaf) {//magic value
+		pr_err("Error while fetching registers, magic doesn't match 0x%lx != 0x%lx\n",
+			   values[0], 0xaabcbdeadbeaf);
+		arch_free_thread_info_aarch64(x);
+		close (mem_fd);
+		// TODO free the data structure
+		goto err_foreign_arch;
+	}
+	
+	save_task_regs_aarch64(x, values);
+	
+	lseek(mem_fd, item->tls, SEEK_SET);
+	_ret = read(mem_fd,  values, 1 *sizeof(long));
+	if (_ret < 0) {
+		pr_err("Cannot read tls (continuing)\n");
+	}
+	//handle error TODO
+	//printf("tls is 0x%lx (%d)\n", values[0], _ret);
+	
+	close(mem_fd);
+err_foreign_arch:
+	/* end experimental -- Antonio TODO -- this is conditional to -arch */
+/*****************************************************************************/
 
 	pargs->add_prot = 0;
 	if (compel_rpc_call_sync(PARASITE_CMD_MPROTECT_VMAS, ctl)) {

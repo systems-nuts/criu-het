@@ -56,6 +56,7 @@ obj-y			+= proc_parse.o
 obj-y			+= protobuf-desc.o
 obj-y			+= protobuf.o
 obj-y			+= pstree.o
+obj-y			+= parse-symbol.o
 obj-y			+= rbtree.o
 obj-y			+= rst-malloc.o
 obj-y			+= seccomp.o

@@ -22,6 +22,12 @@ struct pstree_item {
 	pid_t			sid;
 	pid_t			born_sid;
 
+#if 1
+	// prototype, this have to be put into a data structure, one per thread TODO
+	unsigned long	regs;
+	unsigned long	tls;
+#endif
+
 	int			nr_threads;	/* number of threads */
 	struct pid		*threads;	/* array of threads */
 	CoreEntry		**core;

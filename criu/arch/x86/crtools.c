@@ -260,6 +260,10 @@ int arch_alloc_thread_info(CoreEntry *core)
 		}
 	}
 
+	//antonio
+	void* aarch64_infos = core->ti_aarch64;
+	fprintf(stderr, "aarch64_infos 0x%lx\n", (unsigned long)aarch64_infos);
+	
 	return 0;
 err:
 	return -1;

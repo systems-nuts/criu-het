@@ -11,6 +11,7 @@ ldflags-y		+= -r -z noexecstack
 
 obj-y			+= cpu.o
 obj-y			+= crtools.o
+obj-y			+= crtools_foreign-aarch64.o
 obj-y			+= kerndat.o
 obj-y			+= sigframe.o
 ifeq ($(CONFIG_COMPAT),y)

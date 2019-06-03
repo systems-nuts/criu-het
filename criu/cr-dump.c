@@ -849,7 +849,7 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 	struct cr_img *img;
 
 	pr_info("\n");
-	pr_info("Dumping core for thread (pid: %d)\n", pid);
+	fprintf(stderr, "Dumping core for thread (pid: %d)\n", pid);
 	pr_info("----------------------------------------\n");
 
 	ret = parasite_dump_thread_seized(tctl, parasite_ctl, id, tid, core);
@@ -858,6 +858,18 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 		goto err;
 	}
 	pstree_insert_pid(tid);
+	
+	/**********************************************************************************/
+	//experimental code for Popcorn (instead of using crit)
+	//TODO check that we need to export into a foreign Architectures
+	//here we remove the information abot the native/src core instead of the foreign one
+	core->mtype = CORE_ENTRY__MARCH__AARCH64;
+	core->tls = item->tls;
+	
+	//remove the information about native registers (in this example x86)
+	arch_free_thread_info(core);
+
+	/**********************************************************************************/	
 
 	img = open_image(CR_FD_CORE, O_DUMP, tid->ns[0].virt);
 	if (!img)
@@ -1211,6 +1223,9 @@ err_cure:
 	goto err_free;
 }
 
+//TODO Antonio
+unsigned long get_sym_addr(char* bin_cnt, const char* searched_symbol);
+
 static int dump_one_task(struct pstree_item *item, InventoryEntry *parent_ie)
 {
 	pid_t pid = item->pid->real;
@@ -1241,6 +1256,70 @@ static int dump_one_task(struct pstree_item *item, InventoryEntry *parent_ie)
 	if (ret < 0)
 		goto err;
 
+/*****************************************************************************/
+	/* the following is experimental -- Antonio TODO*/
+	
+	// TODO TODO TODO check if -arch was defined as an option, otherwise no need to do Popcorn
+	
+	// TODO add copyright header to this file and also parse-symbol.c 0x81fd
+	int fd = open_proc_path(pid, "exe");
+	char buff1[64]; //TODO rename
+	char buff2[128]; //TODO rename
+	if (fd < 0) {
+		pr_err ("Cannot open_proc_path (%d)\n", fd);
+		goto err_foreign_arch;
+	}
+	memset(buff1,0, 64);
+	sprintf(buff1,"/proc/self/fd/%d",fd);
+	memset(buff2,0, 128);
+	int _ret = readlink(buff1, buff2, 128);
+	close(fd);
+	if (_ret == -1) {
+		pr_err ("Cannot readlink /proc/self/fd/%d",fd);
+		goto err_foreign_arch;
+	}
+	
+	// Here I have the file path finally
+	fd = open(buff2, O_RDONLY);
+	if (fd < 0) {
+		pr_err ("Cannot open_proc_path %s\n", buff2);
+		goto err_foreign_arch;
+	}
+{
+		struct stat _stat;
+		int ret; void* binary;
+		
+		ret = fstat(fd, &_stat);
+		if ( ret == -1) {
+			pr_err("Cannot fstat exe (%d)\n", ret);
+			goto out_foreign_arch;
+		}
+		fprintf(stderr, "mode 0x%x size 0x%lx fd %d\n", _stat.st_mode, _stat.st_size, fd);
+		
+		binary = mmap(NULL, _stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+		if (binary == (void *) -1) {
+			pr_err("Cannot mmap exe (0x%lx) size 0x%lx\n", (unsigned long)binary, _stat.st_size);
+			perror("WARN: foreign arch mapping");
+			
+			sleep (60);
+			goto out_foreign_arch;
+		}
+		
+		// collect symbols addresses
+		item->regs = get_sym_addr(binary, "regs_dst"); // TODO define this as a macro
+		item->tls = get_sym_addr(binary, "tls_dst"); // TODO define this as a macro
+		fprintf(stderr, "regs @ 0x%lx tls @ 0x%lx\n", item->regs, item->tls);
+		
+		// munmap
+		munmap(binary,_stat.st_size);
+}
+out_foreign_arch:
+	//exit
+	close(fd);
+err_foreign_arch:
+	/* experimental end here -- Antonio TODO*/
+/*****************************************************************************/
+	
 	ret = collect_mappings(pid, &vmas, dump_filemap);
 	if (ret) {
 		pr_err("Collect mappings (pid: %d) failed with %d\n", pid, ret);

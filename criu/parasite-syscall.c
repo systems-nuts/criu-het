@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <sys/mman.h>
 
+
 #include "common/config.h"
 #include "common/compiler.h"
 #include "types.h"
@@ -563,12 +564,12 @@ struct parasite_ctl *parasite_infect_seized(pid_t pid, struct pstree_item *item,
 
 	parasite_ensure_args_size(dump_pages_args_size(vma_area_list));
 	parasite_ensure_args_size(aio_rings_args_size(vma_area_list));
-
+	
 	if (compel_infect(ctl, item->nr_threads, parasite_args_size) < 0) {
 		compel_cure(ctl);
 		return NULL;
 	}
-
+	
 	parasite_args_size = PARASITE_ARG_SIZE_MIN; /* reset for next task */
 	memcpy(&item->core[0]->tc->blk_sigset, compel_task_sigmask(ctl), sizeof(k_rtsigset_t));
 	dmpi(item)->parasite_ctl = ctl;

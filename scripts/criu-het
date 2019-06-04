@@ -105,7 +105,7 @@ function het_checkpoint()
 	# dump process
 	#echo "executing $CRIU_BIN with params: $options"
 	start_ms=$(start_timer)
-	$CRIU_BIN $options -t $target_arch
+	$CRIU_BIN $options --target $target_arch
 	end_timer "dump"
 }
 

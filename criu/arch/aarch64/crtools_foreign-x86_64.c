@@ -66,6 +66,11 @@ int save_task_regs_x86_64(void *x, unsigned long * values)
 	core->thread_info->fpregs->mxcsr_mask = 65535;
 		
 	/* Make sure we have enough space */
+	printf("st_space %d my space %d\n", 
+		   core->thread_info->fpregs->n_st_space, (8*sizeof(double)));
+	printf("xmm_space %d my space %d\n", 
+		   core->thread_info->fpregs->n_xmm_space, (16 * 2 * sizeof(long)));
+	
 	BUG_ON(core->thread_info->fpregs->n_st_space != (8*sizeof(double)));
 	BUG_ON(core->thread_info->fpregs->n_xmm_space != (16 * 2 * sizeof(long)));
 

@@ -33,7 +33,7 @@
 
 /* supported target foreign architectures, currently only aarch64/x86_64 */
 struct cr_target targets[] = {
-	{"x86_64", CORE_ENTRY__MARCH__X86_64},
+	{"x86-64", CORE_ENTRY__MARCH__X86_64},
 	{"arm", CORE_ENTRY__MARCH__ARM},
 	{"aarch64", CORE_ENTRY__MARCH__AARCH64},
 	{"ppc64", CORE_ENTRY__MARCH__PPC64},

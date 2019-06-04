@@ -416,6 +416,8 @@ usage:
 "			Namespace can be specified as either pid or file path.\n"
 "			OPTIONS can be used to specify parameters for userns:\n"
 "			    user:PID,UID,GID\n"
+"  --target arch         Save the checkpoint in the target architecture arch\n
+"                        format instead than the cureent architecture\n"
 "\n"
 "Check options:\n"
 "  Without options, \"criu check\" checks availability of absolutely required\n"

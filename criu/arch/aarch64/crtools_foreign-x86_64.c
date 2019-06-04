@@ -66,18 +66,13 @@ int save_task_regs_x86_64(void *x, unsigned long * values)
 	core->thread_info->fpregs->mxcsr_mask = 65535;
 		
 	/* Make sure we have enough space */
-	printf("st_space %d my space %d\n", 
-		   core->thread_info->fpregs->n_st_space, (8*sizeof(double)));
-	printf("xmm_space %d my space %d\n", 
-		   core->thread_info->fpregs->n_xmm_space, (16 * 2 * sizeof(long)));
-	
-	BUG_ON(core->thread_info->fpregs->n_st_space != (8*sizeof(double)));
-	BUG_ON(core->thread_info->fpregs->n_xmm_space != (16 * 2 * sizeof(long)));
+	BUG_ON((core->thread_info->fpregs->n_st_space *4) != (8*sizeof(long double)));
+	BUG_ON((core->thread_info->fpregs->n_xmm_space *4)!= (16 * 2 * sizeof(long)));
 
-	values += 8;
+	values += 8; // mmx registers
 	memcpy(core->thread_info->fpregs->xmm_space, values, 16 * 2 * sizeof(long));
 	values += (16*2);
-	memcpy(core->thread_info->fpregs->st_space, values, 8 * sizeof(double));
+	memcpy(core->thread_info->fpregs->st_space, values, 8 * sizeof(long double));
 	values += (8*2);
 
 	int * ivalues = (int*) values;

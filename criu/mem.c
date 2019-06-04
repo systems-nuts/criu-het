@@ -585,7 +585,7 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 	}
 	ptrace (PTRACE_CONT, item->pid->real);
 #endif
-
+	timing_start(TIME_TRANSFORM);
 	if ((opts.target != CORE_ENTRY__MARCH) &&
 		item->regs && item->tls ) {
 		CoreEntry *x = item->core[0];
@@ -668,6 +668,7 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 		close(mem_fd);
 	}
 err_foreign_arch:
+	timing_stop(TIME_TRANSFORM);
 	/* end experimental -- Antonio TODO -- this is conditional to -arch */
 /*****************************************************************************/
 

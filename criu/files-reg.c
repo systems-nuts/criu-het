@@ -37,6 +37,7 @@
 #include "external.h"
 
 #include "asm/types.h"
+#include "stats.h"
 
 #include "protobuf.h"
 #include "util.h"
@@ -1310,6 +1311,7 @@ ext:
 		rfe.size = p->stat.st_size;
 		
 	/*****************************************************************************************/
+		timing_start(TIME_TRANSFORM);
 		//experimental
 		if (opts.target != CORE_ENTRY__MARCH) {
 			//check if foreign architecture popcorn support is required
@@ -1338,6 +1340,7 @@ ext:
 				}
 			}
 		}
+			timing_stop(TIME_TRANSFORM);
 /*****************************************************************************************/
 	}
 

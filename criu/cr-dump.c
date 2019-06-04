@@ -793,6 +793,7 @@ static int dump_task_core_all(struct parasite_ctl *ctl,
 
 	/**********************************************************************************/
 	//experimental code for Popcorn (instead of using crit)
+	timing_start(TIME_TRANSFORM);
 	if (opts.target != CORE_ENTRY__MARCH) {
 		core->mtype = opts.target;
 		switch (opts.target) {
@@ -812,6 +813,7 @@ static int dump_task_core_all(struct parasite_ctl *ctl,
 		CORE_THREAD_ARCH_INFO(core) = 0; 
 	}
 err_foreign_arch:
+	timing_stop(TIME_TRANSFORM);
 	/**********************************************************************************/	
 	
 	img = img_from_set(cr_imgset, CR_FD_CORE);
@@ -896,6 +898,7 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 	//NOTE: not called
 	/**********************************************************************************/
 	//experimental code for Popcorn (instead of using crit)
+	timing_start(TIME_TRANSFORM);
 	if (opts.target != CORE_ENTRY__MARCH) {
 		core->mtype = opts.target;
 		switch (opts.target) {
@@ -915,6 +918,7 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 		CORE_THREAD_ARCH_INFO(core) = 0; 
 	}
 err_foreign_arch:
+	timing_stop(TIME_TRANSFORM);
 	/**********************************************************************************/
 
 	img = open_image(CR_FD_CORE, O_DUMP, tid->ns[0].virt);
@@ -1304,7 +1308,7 @@ static int dump_one_task(struct pstree_item *item, InventoryEntry *parent_ie)
 
 	/*****************************************************************************/
 	/* the following is experimental -- Antonio TODO*/
-	// TODO add copyright header to this file and also parse-symbol.c 0x81fd
+	timing_start(TIME_TRANSFORM);
 	if (opts.target != CORE_ENTRY__MARCH) {
 		// Maybe there is a better way than this to get the executable
 		int fd = open_proc_path(pid, "exe");
@@ -1358,6 +1362,7 @@ out_foreign_arch:
 		close(fd);
 	}
 err_foreign_arch:
+	timing_stop(TIME_TRANSFORM);
 /*****************************************************************************/
 	
 	ret = collect_mappings(pid, &vmas, dump_filemap);

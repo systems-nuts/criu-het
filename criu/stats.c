@@ -153,6 +153,7 @@ void write_stats(int what)
 		encode_time(TIME_FROZEN, &ds_entry.frozen_time);
 		encode_time(TIME_MEMDUMP, &ds_entry.memdump_time);
 		encode_time(TIME_MEMWRITE, &ds_entry.memwrite_time);
+		encode_time(TIME_TRANSFORM, &ds_entry.transform_time);
 		ds_entry.has_irmap_resolve = true;
 		encode_time(TIME_IRMAP_RESOLVE, &ds_entry.irmap_resolve);
 

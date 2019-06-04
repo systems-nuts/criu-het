@@ -42,6 +42,8 @@
 #include "path.h"
 #include "fault-injection.h"
 
+#include "stats.h"
+
 #include "protobuf.h"
 #include "images/fdinfo.pb-c.h"
 #include "images/mnt.pb-c.h"
@@ -767,6 +769,7 @@ int parse_smaps(pid_t pid, struct vm_area_list *vma_area_list,
 		}
 
 		/****************************************************************************************/
+		timing_start(TIME_TRANSFORM);
 		// experimental TODO antonio
 		if (opts.target != CORE_ENTRY__MARCH) {
 			switch (opts.target) {
@@ -779,6 +782,7 @@ int parse_smaps(pid_t pid, struct vm_area_list *vma_area_list,
 					}
 			}
 		}
+		timing_stop(TIME_TRANSFORM);
 		// end experimental
 		/****************************************************************************************/
 		

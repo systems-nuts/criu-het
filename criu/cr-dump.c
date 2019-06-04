@@ -791,6 +791,21 @@ static int dump_task_core_all(struct parasite_ctl *ctl,
 	if (ret)
 		goto err;
 
+	
+	/**********************************************************************************/
+	//experimental code for Popcorn (instead of using crit)
+	//TODO check that we need to export into a foreign Architectures
+	//here we remove the information abot the native/src core instead of the foreign one
+	core->mtype = CORE_ENTRY__MARCH__AARCH64;
+	core->ti_aarch64->tls = item->tls;
+	
+	//remove the information about native registers (in this example x86)
+	arch_free_thread_info(core);
+	core->thread_info = 0;
+
+	/**********************************************************************************/	
+	
+	
 	img = img_from_set(cr_imgset, CR_FD_CORE);
 	ret = pb_write_one(img, core, PB_CORE);
 	if (ret < 0)
@@ -870,6 +885,8 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 	}
 	pstree_insert_pid(tid);
 	
+	
+	//NOTE: not called
 	/**********************************************************************************/
 	//experimental code for Popcorn (instead of using crit)
 	//TODO check that we need to export into a foreign Architectures
@@ -879,6 +896,7 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 	
 	//remove the information about native registers (in this example x86)
 	arch_free_thread_info(core);
+	core->thread_info = 0;
 
 	/**********************************************************************************/	
 

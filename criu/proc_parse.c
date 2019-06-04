@@ -766,6 +766,18 @@ int parse_smaps(pid_t pid, struct vm_area_list *vma_area_list,
 				continue;
 		}
 
+		/****************************************************************************************/
+		// experimental TODO antonio
+		//if ( foreign address_doesn't support
+		if (vma_area && vma_entry_is(vma_area->e, VMA_AREA_VSYSCALL)) {
+			printf("removing VMA_AREA_VSYSCALL from mapping 0x%lx - 0x%lx\n", vma_area->e->start, vma_area->e->end );
+			xfree(vma_area);
+			vma_area =NULL;
+			continue;
+		}
+		// end experimental
+		/****************************************************************************************/
+		
 		if (vma_area && vma_list_add(vma_area, vma_area_list,
 						&prev_end, &vfi, &prev_vfi))
 			goto err;
@@ -820,6 +832,7 @@ int parse_smaps(pid_t pid, struct vm_area_list *vma_area_list,
 		} else if (vma_entry_is(vma_area->e, VMA_AREA_AIORING))
 			vma_area_list->nr_aios++;
 		
+		// if using RELOC_STACK
 		if (vma_area->e->prot == 0 &&
 				(vma_area->e->flags & MAP_PRIVATE) && 
 				vma_area->e->end==MAX_VMA_ADDR) { //This value depends on the architecture

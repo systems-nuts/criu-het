@@ -75,7 +75,7 @@ struct vma_area {
 
 #define VMA_COW_ROOT	((struct vma_area *)1)
 
-typedef int (*dump_filemap_t)(struct vma_area *vma_area, int fd);
+typedef int (*dump_filemap_t)(struct vma_area *vma_area, int fd, pid_t pid);
 
 extern struct vma_area *alloc_vma_area(void);
 extern int collect_mappings(pid_t pid,

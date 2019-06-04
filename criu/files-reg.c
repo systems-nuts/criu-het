@@ -1260,8 +1260,6 @@ int dump_one_reg_file(int lfd, u32 id, const struct fd_parms *p)
 	} else
 		link = p->link;
 
-
-
 	snprintf(ext_id, sizeof(ext_id), "file[%x:%"PRIx64"]", p->mnt_id, p->stat.st_ino);
 	if (external_lookup_id(ext_id)) {
 		/* the first symbol will be cut on restore to get an relative path*/
@@ -1308,6 +1306,36 @@ ext:
 	if (S_ISREG(p->stat.st_mode) && should_check_size(rfe.flags)) {
 		rfe.has_size = true;
 		rfe.size = p->stat.st_size;
+		
+	/*****************************************************************************************/
+	//experimental TODO
+	//check if foreign architecture popcorn support is required
+	char buff1[192]; // TODO note I am reusing this value later
+	char buff2[192]; //TODO
+	memset(buff1, 0, 192);
+	memset(buff2, 0, 192);
+	sprintf(buff1, "/proc/%d/exe", p->pid);
+	int _ret = readlink(buff1, buff2, 192);
+	if (_ret <0)
+		pr_err("Cannot readlink /proc/%d/exe (%s)\n", p->pid, rfe.name);
+	else {
+		//printf("%s: %s VS %s --- %d [%d]\n", __func__, rfe.name, buff2, rfe.id, lfd);
+		if (strcmp(buff2, rfe.name) == 0) {
+			struct stat st;
+			// need to update the size of the file
+			memset(buff1, 0, 192);
+			sprintf(buff1, "%s_aarch64", buff2);
+			int _ret = stat(buff1, &st);
+			if (_ret < 0) {
+				pr_err("Cannot stat %s", buff1);
+				perror("stat foreign file");
+			}
+			else
+			  rfe.size = st.st_size;
+		}
+	}
+	
+/*****************************************************************************************/
 	}
 
 	fe.type = FD_TYPES__REG;

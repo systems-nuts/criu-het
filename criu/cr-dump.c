@@ -282,6 +282,9 @@ static int dump_task_exe_link(pid_t pid, MmEntry *mm)
 	if (fill_fd_params_special(fd, &params))
 		return -1;
 
+	if (!params.pid)
+		params.pid = pid;
+	
 	ret = dump_one_reg_file_cond(fd, &mm->exe_file_id, &params);
 
 	close(fd);
@@ -303,6 +306,9 @@ static int dump_task_fs(pid_t pid, struct parasite_dump_misc *misc, struct cr_im
 
 	if (fill_fd_params_special(fd, &p))
 		return -1;
+	
+	if (!p.pid)
+		p.pid = pid;
 
 	ret = dump_one_reg_file_cond(fd, &fe.cwd_id, &p);
 	if (ret < 0)
@@ -317,6 +323,9 @@ static int dump_task_fs(pid_t pid, struct parasite_dump_misc *misc, struct cr_im
 	if (fill_fd_params_special(fd, &p))
 		return -1;
 
+	if (!p.pid)
+		p.pid = pid;
+	
 	ret = dump_one_reg_file_cond(fd, &fe.root_id, &p);
 	if (ret < 0)
 		return ret;
@@ -388,7 +397,7 @@ static int dump_pid_misc(pid_t pid, TaskCoreEntry *tc)
 	return 0;
 }
 
-static int dump_filemap(struct vma_area *vma_area, int fd)
+static int dump_filemap(struct vma_area *vma_area, int fd, pid_t pid)
 {
 	struct fd_parms p = FD_PARMS_INIT;
 	VmaEntry *vma = vma_area->e;
@@ -415,9 +424,11 @@ static int dump_filemap(struct vma_area *vma_area, int fd)
 		aufs_link.len = strlen(aufs_link.name);
 		p.link = &aufs_link;
 	}
+	
+	if (!p.pid)
+		p.pid = pid;
 
 	/* Flags will be set during restore in open_filmap() */
-
 	ret = dump_one_reg_file_cond(fd, &id, &p);
 
 	vma->shmid = id;
@@ -864,7 +875,7 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 	//TODO check that we need to export into a foreign Architectures
 	//here we remove the information abot the native/src core instead of the foreign one
 	core->mtype = CORE_ENTRY__MARCH__AARCH64;
-	core->tls = item->tls;
+	core->ti_aarch64->tls = item->tls;
 	
 	//remove the information about native registers (in this example x86)
 	arch_free_thread_info(core);

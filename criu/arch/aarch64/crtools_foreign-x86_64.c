@@ -34,15 +34,15 @@ int save_task_regs_x86_64(void *x, unsigned long * values)
 	// first value is the magic number;
 	values++;
 	
-	gpregs->rip = *values++;
-	gpregs->rax = *values++;
-	gpregs->rdx = *values++;
-	gpregs->rcx = *values++;
-	gpregs->rbx = *values++;
-	gpregs->rsi = *values++;
-	gpregs->rdi = *values++;
-	gpregs->rbp = *values++;
-	gpregs->rsp = *values++;
+	gpregs->ip = *values++;
+	gpregs->ax = *values++;
+	gpregs->dx = *values++;
+	gpregs->cx = *values++;
+	gpregs->bx = *values++;
+	gpregs->si = *values++;
+	gpregs->di = *values++;
+	gpregs->bp = *values++;
+	gpregs->sp = *values++;
 	gpregs->r8 = *values++;
 	gpregs->r9 = *values++;
 	gpregs->r10 = *values++;
@@ -82,7 +82,7 @@ int save_task_regs_x86_64(void *x, unsigned long * values)
 	gpregs->es = *ivalues++;
 	gpregs->fs = *ivalues++;
 	gpregs->gs = *ivalues++;
-	values = (long*) ivalues;
+	values = (unsigned long*) ivalues;
 	gpregs->flags = *values++;
 	
 	return 0;

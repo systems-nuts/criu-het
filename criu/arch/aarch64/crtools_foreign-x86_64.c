@@ -166,6 +166,23 @@ struct avx_512_zmm_uppers_state {
 	uint64_t			zmm_upper[16 * 4];
 } __packed;
 
+/*
+ * State component 7 is used for the 16 512-bit registers
+ * ZMM16-ZMM31 (Hi16_ZMM state).
+ */
+struct avx_512_hi16_state {
+	uint64_t			hi16_zmm[16 * 8];
+} __packed;
+
+/*
+ * State component 9: 32-bit PKRU register.  The state is
+ * 8 bytes long but only 4 bytes is used currently.
+ */
+struct pkru_state {
+	uint32_t			pkru;
+	uint32_t			pad;
+} __packed;
+
 
 
 static int alloc_xsave_extends(UserX86XsaveEntry *xsave)
@@ -205,7 +222,7 @@ static int alloc_xsave_extends(UserX86XsaveEntry *xsave)
 			goto err;
 //	}
 
-/	if (compel_fpu_has_feature(XFEATURE_Hi16_ZMM)) {
+//	if (compel_fpu_has_feature(XFEATURE_Hi16_ZMM)) {
 		xsave->n_hi16_zmm	= XSAVE_PB_NELEMS(struct avx_512_hi16_state, xsave, hi16_zmm);
 		xsave->hi16_zmm		= xzalloc(pb_repeated_size(xsave, hi16_zmm));
 		if (!xsave->hi16_zmm)

@@ -797,8 +797,10 @@ int parse_options(int argc, char **argv, bool *usage_error,
 			// note the value of opts.target is initialized to CORE_ENTRY__MARCH
 			int i, value =-1;
 			for (i=0; targets[i].name != 0; i++)
-				if (strcmp(optarg, targets[i].name) == 0)
+				if (strcmp(optarg, targets[i].name) == 0) {
 					value = targets[i].value;
+					break;
+				}
 			if (value != -1) {
 				opts.target = value;
 				opts.target_name = targets[i].name;

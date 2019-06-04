@@ -36,6 +36,8 @@
 #include "fault-injection.h"
 #include "external.h"
 
+#include "asm/types.h"
+
 #include "protobuf.h"
 #include "util.h"
 #include "images/regfile.pb-c.h"
@@ -1308,33 +1310,34 @@ ext:
 		rfe.size = p->stat.st_size;
 		
 	/*****************************************************************************************/
-	//experimental TODO
-	//check if foreign architecture popcorn support is required
-	char buff1[192]; // TODO note I am reusing this value later
-	char buff2[192]; //TODO
-	memset(buff1, 0, 192);
-	memset(buff2, 0, 192);
-	sprintf(buff1, "/proc/%d/exe", p->pid);
-	int _ret = readlink(buff1, buff2, 192);
-	if (_ret <0)
-		pr_err("Cannot readlink /proc/%d/exe (%s)\n", p->pid, rfe.name);
-	else {
-		//printf("%s: %s VS %s --- %d [%d]\n", __func__, rfe.name, buff2, rfe.id, lfd);
-		if (strcmp(buff2, rfe.name) == 0) {
-			struct stat st;
-			// need to update the size of the file
+		//experimental
+		if (opts.target != CORE_ENTRY__MARCH) {
+			//check if foreign architecture popcorn support is required
+			char buff1[192]; // TODO note I am reusing this value later
+			char buff2[192]; //TODO
 			memset(buff1, 0, 192);
-			sprintf(buff1, "%s_aarch64", buff2);
-			int _ret = stat(buff1, &st);
-			if (_ret < 0) {
-				pr_err("Cannot stat %s", buff1);
-				perror("stat foreign file");
+			memset(buff2, 0, 192);
+			sprintf(buff1, "/proc/%d/exe", p->pid);
+			int _ret = readlink(buff1, buff2, 192);
+			if (_ret <0)
+				pr_err("Cannot readlink /proc/%d/exe (%s)\n", p->pid, rfe.name);
+			else {
+				//printf("%s: %s VS %s --- %d [%d]\n", __func__, rfe.name, buff2, rfe.id, lfd);
+				if (strcmp(buff2, rfe.name) == 0) {
+					struct stat st;
+					// need to update the size of the file
+					memset(buff1, 0, 192);
+					sprintf(buff1, "%s_%s", buff2, opts.target_name);
+					int _ret = stat(buff1, &st);
+					if (_ret < 0) {
+						pr_err("Cannot stat %s", buff1);
+						perror("stat foreign file");
+					}
+					else
+						rfe.size = st.st_size;
+				}
 			}
-			else
-			  rfe.size = st.st_size;
 		}
-	}
-	
 /*****************************************************************************************/
 	}
 

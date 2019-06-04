@@ -105,19 +105,8 @@ function het_checkpoint()
 	# dump process
 	#echo "executing $CRIU_BIN with params: $options"
 	start_ms=$(start_timer)
-	$CRIU_BIN $options
+	$CRIU_BIN $options -t $target_arch
 	end_timer "dump"
-
-	# convert checkpoint
-	start_ms=$(start_timer)
-	if [ -z $outdir ]; then
-		target_outdir=$target_arch
-	else
-		target_outdir=$outdir/$target_arch
-	fi
-    crit recode -t $target_arch -d $outdir -o $target_outdir 
-	#python -m cProfile -o profile.dat `which crit` recode -t $target_arch -d $outdir -o $target_outdir ### this solution is low level but can be visualized with KCacheGrind, pyprof2calltree
-	end_timer "recode"
 }
 
 if [ -z $target_arch ] || [ "$target_arch" = "$host" ] || [ "$DUMP" == false ]

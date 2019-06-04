@@ -139,6 +139,7 @@ struct cr_options {
 	int			log_level;
 	char			*imgs_dir;
 	int			target;
+	char		*target_name;
 };
 
 extern struct cr_options opts;

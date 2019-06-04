@@ -768,12 +768,16 @@ int parse_smaps(pid_t pid, struct vm_area_list *vma_area_list,
 
 		/****************************************************************************************/
 		// experimental TODO antonio
-		//if ( foreign address_doesn't support
-		if (vma_area && vma_entry_is(vma_area->e, VMA_AREA_VSYSCALL)) {
-			printf("removing VMA_AREA_VSYSCALL from mapping 0x%lx - 0x%lx\n", vma_area->e->start, vma_area->e->end );
-			xfree(vma_area);
-			vma_area =NULL;
-			continue;
+		if (opts.target != CORE_ENTRY__MARCH) {
+			switch (opts.target) {
+				case CORE_ENTRY__MARCH__AARCH64:
+					if (vma_area && vma_entry_is(vma_area->e, VMA_AREA_VSYSCALL)) {
+						printf("removing VMA_AREA_VSYSCALL from mapping 0x%lx - 0x%lx\n", vma_area->e->start, vma_area->e->end );
+						xfree(vma_area);
+						vma_area =NULL;
+						continue;
+					}
+			}
 		}
 		// end experimental
 		/****************************************************************************************/

@@ -32,7 +32,6 @@
 
 
 /* supported target foreign architectures, currently only aarch64/x86_64 */
-
 struct cr_target targets[] = {
 	{"x86_64", CORE_ENTRY__MARCH__X86_64},
 	{"arm", CORE_ENTRY__MARCH__ARM},
@@ -800,8 +799,10 @@ int parse_options(int argc, char **argv, bool *usage_error,
 			for (i=0; targets[i].name != 0; i++)
 				if (strcmp(optarg, targets[i].name) == 0)
 					value = targets[i].value;
-			if (value != -1)
+			if (value != -1) {
 				opts.target = value;
+				opts.target_name = targets[i].name;
+			}
 			else {
 				pr_msg("Unsupported target architecture: %s\n", optarg);
 				return 1;

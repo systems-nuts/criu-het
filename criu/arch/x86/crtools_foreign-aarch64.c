@@ -1,7 +1,7 @@
 
 /* Antonio Barbalace, Stevens 2019 */
 
-//TODO TODO TODO we should integrate this in a better way ... such as trick used in musl to redefine and include another source
+//TODO TODO TODO we should integrate this in a better way ... such as trick used in musl to redefine and include another source (this is the original criu/arch/aarch64/crtools.c modified)
 
 
 
@@ -26,6 +26,8 @@
 #include "cpu.h"
 #include "restorer.h"
 #include <compel/compel.h>
+
+#include "asm/foreign.h"
 
 unsigned __page_size = 0;
 unsigned __page_shift = 0;

@@ -519,11 +519,7 @@ out:
 }
 
 
-//TODO fix the following refactor
-	int save_task_regs_aarch64(void *x, unsigned long *values);
-	int arch_alloc_thread_info_aarch64(CoreEntry *core);
-	void arch_free_thread_info_aarch64(CoreEntry *core);
-
+#include "asm/foreign.h"
 
 
 int parasite_dump_pages_seized(struct pstree_item *item,
@@ -565,31 +561,8 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 		return ret;
 	}
 
-		
 	/*****************************************************************************/
-	/* experimental code, before dumping we read the variables for core -- Antonio TODO*/
-	
-	//TODO if foreign architecture check
-	
-/*
->>>arm is 34 *8b + 32 *16b
-class Aarch64Struct(Structure):
-	_fields_ = [("magic", c_ulonglong), ("sp", c_ulonglong), ("pc", c_ulonglong), ("regs", Reg64 * 31), ("vregs", Reg128 * 32)]
-	
->>>x86 is 16 *8b + 8 *8b + 16 *16b + 8 * longdouble + 6*4b + 1 * 8b
-class X86Struct(Structure):
-	_fields_ = [("magic", c_ulonglong), ("rip", c_ulonglong)]
-	gregs=["rax","rdx","rcx","rbx","rsi","rdi","rbp","rsp","r8","r9","r10","r11","r12","r13","r14","r15"]
-	for grn in gregs:
-		_fields_.append((grn, c_ulonglong))
-	_fields_.append(("mmx", Reg64*8)) 
-	_fields_.append(("xmm", Reg128*16)) 
-	_fields_.append(("st", c_longdouble*8)) 
-	csregs=["cs","ss","ds","es","fs","gs"]
-	for grn in csregs:
-		_fields_.append((grn, c_uint32))
-	_fields_.append(("rflags", c_uint64)) 	
-	*/
+	/* experimental code, the following must be refactored */
 #if 0
 	fprintf(stderr, "item %d\n", item->pid->real);
 	
@@ -613,61 +586,87 @@ class X86Struct(Structure):
 	ptrace (PTRACE_CONT, item->pid->real);
 #endif
 
-//check if foreign architecture is requested TODO assume it is required to do aarch64
-
-	CoreEntry *x = item->core[0];
+	if ((opts.target != CORE_ENTRY__MARCH) &&
+		item->regs && item->tls ) {
+		CoreEntry *x = item->core[0];
+		int _ret = -1;
+		void (*arch_ti_free) (CoreEntry *core) = 0;
+		int (*arch_ti_save) (void *core, unsigned long * values) = 0;
+		int arch_ti_size = 0;
+		long arch_ti_magic = 0;
+		
+		switch (opts.target) {
+			case CORE_ENTRY__MARCH__X86_64:
+				arch_ti_free = arch_free_thread_info_x86_64;
+				arch_ti_size = (2+16+8+32+16+4) * sizeof(long);
+				arch_ti_magic = 0xA8664DEADBEAF;
+				arch_ti_save = save_task_regs_x86_64;
+				if (x->thread_info == 0)
+					if ((_ret = arch_alloc_thread_info_x86_64(x)) == -1) {
+						pr_err("Cannot arch_alloc_thread_info_aarch64\n");
+						goto err_foreign_arch;
+					}
+				break;
+			case CORE_ENTRY__MARCH__AARCH64:
+				arch_ti_free = arch_free_thread_info_aarch64;
+				arch_ti_size = (34+64) * sizeof(long);
+				arch_ti_magic = 0xaabcbdeadbeaf;
+				arch_ti_save = save_task_regs_aarch64;
+				if (x->ti_aarch64 == 0)
+					if ((_ret = arch_alloc_thread_info_aarch64(x)) == -1) {
+						pr_err("Cannot arch_alloc_thread_info_aarch64\n");
+						goto err_foreign_arch;
+					}
+				break;
+			default:
+				pr_err("Foreign architecture %d is unsupported\n", opts.target);
+		}
 	
-	if (x->ti_aarch64 == 0) {
-		int _ret;
-		if ((_ret = arch_alloc_thread_info_aarch64(x)) == -1) {
-			pr_err("Cannot arch_alloc_thread_info_aarch64\n");
+		// read the memory content of the process we want to checkpoint
+		char buff1[64];
+		unsigned long * values = xmalloc(arch_ti_size);
+		memset(buff1, 0, 64);
+		sprintf (buff1,"/proc/%d/mem", item->pid->real);
+		int mem_fd = open(buff1, O_RDONLY);
+		if (mem_fd <0) {
+			pr_err("Cannot open to %s\n", buff1);
+			arch_ti_free(x);
 			goto err_foreign_arch;
 		}
+		lseek(mem_fd, item->regs, SEEK_SET);
+		_ret = read(mem_fd,  values, arch_ti_size);
+		if (_ret < 0) {
+			perror("Cannot read mem");
+			close (mem_fd);
+			arch_ti_free(x);
+			goto err_foreign_arch;
+		}
+		//int iii;
+		//	printf("_ret: %d\n", _ret);	
+		//for( iii= 0; iii< (34+64); iii+=2)
+		//	printf ("%d: 0x%lx\t%d: 0x%lx\n", iii, values[iii], iii+1, values[iii+1]);
+		
+		if (values[0] != arch_ti_magic) {//magic value
+			pr_err("Error while fetching registers, magic doesn't match 0x%lx != 0x%lx\n",
+				values[0], arch_ti_magic);
+			arch_ti_free(x);
+			close (mem_fd);
+			goto err_foreign_arch;
+		}
+		arch_ti_save(x, values);
+		
+		lseek(mem_fd, item->tls, SEEK_SET);
+		_ret = read(mem_fd,  values, 1 *sizeof(long));
+		if (_ret < 0) {
+			pr_err("Cannot read tls (continuing)\n");
+		}
+		else { 
+			//printf("tls is 0x%lx (%d)\n", values[0], _ret);
+			item->tls = values[0]; //// TODO
+		}
+		
+		close(mem_fd);
 	}
-	
-	//printf("regs: 0x%lx tls: 0x%lx\n",item->regs,item->tls ); // already printed
-	char buff1[64];
-	unsigned long * values = xmalloc((34+64) * sizeof(long)); //TODO put this somewhere else 
-	memset(buff1, 0, 64);
-	sprintf (buff1,"/proc/%d/mem", item->pid->real);
-	int mem_fd = open(buff1, O_RDONLY);
-	if (mem_fd <0) {
-		pr_err("Cannot open to %s\n", buff1);
-		arch_free_thread_info_aarch64(x);
-		goto err_foreign_arch;
-	}
-	lseek(mem_fd, item->regs, SEEK_SET);
-	int _ret = read(mem_fd,  values, (34+64) *sizeof(long));
-	if (_ret < 0) {
-		 perror("Cannot read mem");
-		 close (mem_fd);
-		 arch_free_thread_info_aarch64(x);
-		 goto err_foreign_arch;
-	}
-	//int iii;
-	//	printf("_ret: %d\n", _ret);	
-	//for( iii= 0; iii< (34+64); iii+=2)
-	//	printf ("%d: 0x%lx\t%d: 0x%lx\n", iii, values[iii], iii+1, values[iii+1]);
-	if (values[0] != 0xaabcbdeadbeaf) {//magic value
-		pr_err("Error while fetching registers, magic doesn't match 0x%lx != 0x%lx\n",
-			   values[0], 0xaabcbdeadbeaf);
-		arch_free_thread_info_aarch64(x);
-		close (mem_fd);
-		// TODO free the data structure
-		goto err_foreign_arch;
-	}
-	
-	save_task_regs_aarch64(x, values);
-	
-	lseek(mem_fd, item->tls, SEEK_SET);
-	_ret = read(mem_fd,  values, 1 *sizeof(long));
-	if (_ret < 0) {
-		pr_err("Cannot read tls (continuing)\n");
-	}
-	//handle error TODO
-	//printf("tls is 0x%lx (%d)\n", values[0], _ret);
-	
-	close(mem_fd);
 err_foreign_arch:
 	/* end experimental -- Antonio TODO -- this is conditional to -arch */
 /*****************************************************************************/

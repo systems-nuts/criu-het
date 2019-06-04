@@ -804,12 +804,14 @@ static int dump_task_core_all(struct parasite_ctl *ctl,
 				break;
 			default:
 				pr_err("Foreign architecture %d is unsupported\n", opts.target);
+				goto err_foreign_arch;
 		}
 	
 		//remove the information about native registers (in this example x86)
 		arch_free_thread_info(core); 
 		CORE_THREAD_ARCH_INFO(core) = 0; 
 	}
+err_foreign_arch:
 	/**********************************************************************************/	
 	
 	img = img_from_set(cr_imgset, CR_FD_CORE);
@@ -905,12 +907,14 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 				break;
 			default:
 				pr_err("Foreign architecture %d is unsupported\n", opts.target);
+				goto err_foreign_arch;
 		}
 	
 		//remove the information about native registers (in this example x86)
 		arch_free_thread_info(core);
 		CORE_THREAD_ARCH_INFO(core) = 0; 
 	}
+err_foreign_arch:
 	/**********************************************************************************/
 
 	img = open_image(CR_FD_CORE, O_DUMP, tid->ns[0].virt);

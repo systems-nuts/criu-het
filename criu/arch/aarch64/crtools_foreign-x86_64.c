@@ -88,6 +88,8 @@ int save_task_regs_x86_64(void *x, unsigned long * values)
 	return 0;
 }
 
+#define GDT_ENTRY_TLS_NUM          3
+
 static void alloc_tls(ThreadInfoX86 *ti, void **mempool)
 {
 	int i;

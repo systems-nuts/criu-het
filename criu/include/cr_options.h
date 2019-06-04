@@ -138,10 +138,18 @@ struct cr_options {
 	pid_t			tree_id;
 	int			log_level;
 	char			*imgs_dir;
+	int			target;
 };
 
 extern struct cr_options opts;
 char *rpc_cfg_file;
+
+struct cr_target {
+	char* name;
+	int   value;
+	//TODO here maybe put functions name pointers in the future
+};
+extern struct cr_target targets[];
 
 extern int parse_options(int argc, char **argv, bool *usage_error, bool *has_exec_cmd, int state);
 extern void init_opts();

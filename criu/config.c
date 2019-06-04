@@ -26,8 +26,21 @@
 #include "sockets.h"
 #include "tty.h"
 #include "version.h"
+#include "asm/types.h"
 
 #include "common/xmalloc.h"
+
+
+/* supported target foreign architectures, currently only aarch64/x86_64 */
+
+struct cr_target targets[] = {
+	{"x86_64", CORE_ENTRY__MARCH__X86_64},
+	{"arm", CORE_ENTRY__MARCH__ARM},
+	{"aarch64", CORE_ENTRY__MARCH__AARCH64},
+	{"ppc64", CORE_ENTRY__MARCH__PPC64},
+	{"s390", CORE_ENTRY__MARCH__S390},
+	{0, 0}
+};
 
 struct cr_options opts;
 
@@ -262,6 +275,7 @@ void init_opts(void)
 	opts.empty_ns = 0;
 	opts.status_fd = -1;
 	opts.log_level = DEFAULT_LOGLEVEL;
+	opts.target = CORE_ENTRY__MARCH;
 }
 
 bool deprecated_ok(char *what)
@@ -422,7 +436,7 @@ int parse_options(int argc, char **argv, bool *usage_error,
 		{OPT_NAME, no_argument, SAVE_TO, true},\
 		{"no-" OPT_NAME, no_argument, SAVE_TO, false}
 
-	static const char short_opts[] = "dSsR:t:hD:o:v::x::Vr:jJ:lW:L:M:";
+	static const char short_opts[] = "dSsR:t:T:hD:o:v::x::Vr:jJ:lW:L:M:";
 	static struct option long_opts[] = {
 		{ "tree",			required_argument,	0, 't'	},
 		{ "leave-stopped",		no_argument,		0, 's'	},
@@ -492,6 +506,7 @@ int parse_options(int argc, char **argv, bool *usage_error,
 		{ "ps-socket",			required_argument,	0, 1091},
 		{ "config",			required_argument,	0, 1089},
 		{ "no-default-config",		no_argument,		0, 1090},
+		{ "target",				required_argument, 0, 'T'},
 		{ },
 	};
 
@@ -778,6 +793,21 @@ int parse_options(int argc, char **argv, bool *usage_error,
 		case 1091:
 			opts.ps_socket = atoi(optarg);
 			break;
+		case 'T':
+		{
+			// note the value of opts.target is initialized to CORE_ENTRY__MARCH
+			int i, value =-1;
+			for (i=0; targets[i].name != 0; i++)
+				if (strcmp(optarg, targets[i].name) == 0)
+					value = targets[i].value;
+			if (value != -1)
+				opts.target = value;
+			else {
+				pr_msg("Unsupported target architecture: %s\n", optarg);
+				return 1;
+			}
+			break;
+		}
 		case 'V':
 			pr_msg("Version: %s\n", CRIU_VERSION);
 			if (strcmp(CRIU_GITID, "0"))

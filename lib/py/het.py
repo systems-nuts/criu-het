@@ -1,6 +1,6 @@
 
 # Original version by Mohmmed Karoi Lamine, Virginia Tech 2019
-# Current version by Antonio Barbalace, Stevens 2019
+# Current version by Antonio Barbalace and Tong Xing, Stevens 2019
 
 import os
 import json
@@ -18,7 +18,6 @@ from os.path import isfile, join
 from collections import OrderedDict
 from ctypes import *
 from shutil import copyfile
-from pwnlib.elf.elf import ELF
 from abc import ABCMeta, abstractmethod
 from subprocess import Popen, PIPE
 
@@ -583,7 +582,7 @@ class X8664Converter(Converter):
 		reg_dict["flags"]=dest_regs.rflags #0x206 or 0x202?
 		reg_dict["orig_ax"]=dest_regs.rax #FIXME: to check
 		#reg_dict["fs_base"]=hex(dest_tls) #"0x821460" #FIXME!!!
-		reg_dict["fs_base"]=hex(int(src_info["clear_tid_addr"],16)-56) #"0x821460" #FIXME!!!
+		reg_dict["fs_base"]=hex(int(src_info["clear_tid_addr"],16)-56)#"0x821460" #FIXME!!!
 		het_log("fs_base", reg_dict["fs_base"])
 		reg_dict["gs_base"]="0x0"
 
@@ -893,7 +892,7 @@ class Aarch64Converter(Converter):
 		#regs
 		reg_list=list()
 		for reg in dest_regs.regs:
-			reg_list.append(hex(reg.x))
+			reg_list.append(hex(reg.x).rstrip('L'))
 		dst_info["gpregs"]["regs"]=reg_list
 		#sp, pc, pstate
 		dst_info["gpregs"]["sp"]=dest_regs.sp
@@ -904,8 +903,8 @@ class Aarch64Converter(Converter):
 		vreg_list=list()
 		for vreg in dest_regs.vregs:
 			#FIXME:check order
-			vreg_list.append(hex(vreg.x))
-			vreg_list.append(hex(vreg.y))
+			vreg_list.append(hex(vreg.x).rstrip('L'))
+			vreg_list.append(hex(vreg.y).rstrip('L'))
 		dst_info["fpsimd"]["vregs"]=vreg_list
 		dst_info["fpsimd"]["fpsr"]=0 #?
 		dst_info["fpsimd"]["fpcr"]=0 #?

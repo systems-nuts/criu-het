@@ -14,7 +14,7 @@
 #include "protobuf.h"
 #include "types.h"
 
-#include "asm/compat.h"
+//#include "asm/compat.h"
 
 #include "asm/foreign.h"
 
@@ -101,6 +101,72 @@ static void alloc_tls(ThreadInfoX86 *ti, void **mempool)
 		user_desc_t__init(ti->tls[i]);
 	}
 }
+
+// TODO need to find a better solution
+/*
+ * State component 2:
+ *
+ * There are 16x 256-bit AVX registers named YMM0-YMM15.
+ * The low 128 bits are aliased to the 16 SSE registers (XMM0-XMM15)
+ * and are stored in 'struct fxregs_state::xmm_space[]' in the
+ * "legacy" area.
+ *
+ * The high 128 bits are stored here.
+ */
+struct ymmh_struct {
+	uint32_t                        ymmh_space[64];
+} __packed;
+
+/* Intel MPX support: */
+
+struct mpx_bndreg {
+	uint64_t			lower_bound;
+	uint64_t			upper_bound;
+} __packed;
+
+/*
+ * State component 3 is used for the 4 128-bit bounds registers
+ */
+struct mpx_bndreg_state {
+	struct mpx_bndreg		bndreg[4];
+} __packed;
+/*
+ * State component 4 is used for the 64-bit user-mode MPX
+ * configuration register BNDCFGU and the 64-bit MPX status
+ * register BNDSTATUS.  We call the pair "BNDCSR".
+ */
+struct mpx_bndcsr {
+	uint64_t			bndcfgu;
+	uint64_t			bndstatus;
+} __packed;
+
+/*
+ * The BNDCSR state is padded out to be 64-bytes in size.
+ */
+struct mpx_bndcsr_state {
+	union {
+		struct mpx_bndcsr	bndcsr;
+		uint8_t			pad_to_64_bytes[64];
+	};
+} __packed;
+/*
+ * State component 5 is used for the 8 64-bit opmask registers
+ * k0-k7 (opmask state).
+ */
+struct avx_512_opmask_state {
+	uint64_t			opmask_reg[8];
+} __packed;
+
+/*
+ * State component 6 is used for the upper 256 bits of the
+ * registers ZMM0-ZMM15. These 16 256-bit values are denoted
+ * ZMM0_H-ZMM15_H (ZMM_Hi256 state).
+ */
+struct avx_512_zmm_uppers_state {
+	uint64_t			zmm_upper[16 * 4];
+} __packed;
+
+
 
 static int alloc_xsave_extends(UserX86XsaveEntry *xsave)
 {

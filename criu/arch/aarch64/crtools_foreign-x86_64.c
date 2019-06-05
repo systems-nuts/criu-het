@@ -35,18 +35,22 @@ int save_task_regs_x86_64(void *x, unsigned long * values)
 	values++;
 	
 	gpregs->ip = *values++;
+	
 	gpregs->ax = *values++;
 	gpregs->dx = *values++;
 	gpregs->cx = *values++;
 	gpregs->bx = *values++;
+	
 	gpregs->si = *values++;
 	gpregs->di = *values++;
 	gpregs->bp = *values++;
 	gpregs->sp = *values++;
+	
 	gpregs->r8 = *values++;
 	gpregs->r9 = *values++;
 	gpregs->r10 = *values++;
 	gpregs->r11 = *values++;
+	
 	gpregs->r12 = *values++;
 	gpregs->r13 = *values++;
 	gpregs->r14 = *values++;

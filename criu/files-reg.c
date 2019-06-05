@@ -1324,7 +1324,7 @@ ext:
 			if (_ret <0)
 				pr_err("Cannot readlink /proc/%d/exe (%s)\n", p->pid, rfe.name);
 			else {
-				//printf("%s: %s VS %s --- %d [%d]\n", __func__, rfe.name, buff2, rfe.id, lfd);
+				printf("%s: %s VS %s --- %d [%d]\n", __func__, rfe.name, buff2, rfe.id, lfd);
 				if (strcmp(buff2, rfe.name) == 0) {
 					struct stat st;
 					// need to update the size of the file
@@ -1340,7 +1340,7 @@ ext:
 				}
 			}
 		}
-			timing_stop(TIME_TRANSFORM);
+		timing_stop(TIME_TRANSFORM);
 /*****************************************************************************************/
 	}
 

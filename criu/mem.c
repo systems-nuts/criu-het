@@ -598,7 +598,7 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 		switch (opts.target) {
 			case CORE_ENTRY__MARCH__X86_64:
 				arch_ti_free = arch_free_thread_info_x86_64;
-				arch_ti_size = (2+16+8+32+16+4) * sizeof(long);
+				arch_ti_size = (2+16+8+(8*2)+(16*2)+4) * sizeof(long);
 				arch_ti_magic = 0xA8664DEADBEAF;
 				arch_ti_save = save_task_regs_x86_64;
 				if (x->thread_info == 0)

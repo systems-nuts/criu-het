@@ -25,6 +25,7 @@ int save_task_regs_x86_64(void *x, unsigned long * values)
 {
 	CoreEntry *core = x;
 	UserX86RegsEntry *gpregs;
+	unsigned long start = values;
 
 	if (core)
 		gpregs = core->thread_info->gpregs;
@@ -80,14 +81,21 @@ int save_task_regs_x86_64(void *x, unsigned long * values)
 	values += (8*2);
 
 	int * ivalues = (int*) values;
-	gpregs->cs = *ivalues++;
-	gpregs->ss = *ivalues++;
+	gpregs->cs = 0x33; ivalues++;
+	gpregs->ss = 0x2b; ivalues++;
 	gpregs->ds = *ivalues++;
 	gpregs->es = *ivalues++;
 	gpregs->fs = *ivalues++;
 	gpregs->gs = *ivalues++;
 	values = (unsigned long*) ivalues;
 	gpregs->flags = *values++;
+	
+	
+	//reg_dict["fs_base"]=hex(int(src_info["clear_tid_addr"],16)-56) #"0x821460" // TODO
+	//reg_dict["gs_base"]="0x0"
+	
+	
+	printf("start 0x%lx end 0x%lx totoal %d\n", start, (unsigned long) values, (unsigned long) values -start);
 	
 	return 0;
 }
@@ -253,7 +261,7 @@ int arch_alloc_thread_info_x86_64(CoreEntry *core)
 	ThreadInfoX86 *ti = NULL;
 
 
-	with_fpu = true;
+	with_fpu = 1;
 
 	sz = sizeof(ThreadInfoX86) + sizeof(UserX86RegsEntry) +
 		GDT_ENTRY_TLS_NUM*sizeof(UserDescT) +

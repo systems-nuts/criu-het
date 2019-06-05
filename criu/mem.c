@@ -601,26 +601,33 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 				arch_ti_size = (2+16+8+(8*2)+(16*2)+4) * sizeof(long);
 				arch_ti_magic = 0xA8664DEADBEAF;
 				arch_ti_save = save_task_regs_x86_64;
-				if (x->thread_info == 0)
+				if (x->thread_info == 0) {
 					if ((_ret = arch_alloc_thread_info_x86_64(x)) == -1) {
 						pr_err("Cannot arch_alloc_thread_info_aarch64\n");
 						goto err_foreign_arch;
 					}
+				}
+				else
+					pr_warn("thread_info already allocated (0x%lx)\n", (unsigned long)x->thread_info);
 				break;
 			case CORE_ENTRY__MARCH__AARCH64:
 				arch_ti_free = arch_free_thread_info_aarch64;
 				arch_ti_size = (34+64) * sizeof(long);
 				arch_ti_magic = 0xaabcbdeadbeaf;
 				arch_ti_save = save_task_regs_aarch64;
-				if (x->ti_aarch64 == 0)
+				if (x->ti_aarch64 == 0) {
 					if ((_ret = arch_alloc_thread_info_aarch64(x)) == -1) {
 						pr_err("Cannot arch_alloc_thread_info_aarch64\n");
 						goto err_foreign_arch;
 					}
+				}
+				else
+					pr_warn("ti_aarch64 already allocated (0x%lx)\n", (unsigned long)x->ti_aarch64);
 				break;
 			default:
 				pr_err("Foreign architecture %d is unsupported\n", opts.target);
 		}
+		printf("arch ti_size: %d ti_magic: 0x%lx\n", arch_ti_size, arch_ti_magic);
 	
 		// read the memory content of the process we want to checkpoint
 		char buff1[64];
@@ -631,6 +638,7 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 		if (mem_fd <0) {
 			pr_err("Cannot open to %s\n", buff1);
 			arch_ti_free(x);
+			xfree(values);
 			goto err_foreign_arch;
 		}
 		lseek(mem_fd, item->regs, SEEK_SET);
@@ -639,6 +647,7 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 			perror("Cannot read mem");
 			close (mem_fd);
 			arch_ti_free(x);
+			xfree(values);
 			goto err_foreign_arch;
 		}
 		//int iii;
@@ -651,6 +660,7 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 				values[0], arch_ti_magic);
 			arch_ti_free(x);
 			close (mem_fd);
+			xfree(values);
 			goto err_foreign_arch;
 		}
 		arch_ti_save(x, values);
@@ -664,7 +674,7 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 			//printf("tls is 0x%lx (%d)\n", values[0], _ret);
 			item->tls = values[0]; //// TODO
 		}
-		
+		xfree(values);
 		close(mem_fd);
 	}
 err_foreign_arch:

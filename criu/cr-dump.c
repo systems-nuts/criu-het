@@ -797,12 +797,26 @@ static int dump_task_core_all(struct parasite_ctl *ctl,
 	if (opts.target != CORE_ENTRY__MARCH) {
 		core->mtype = opts.target;
 		switch (opts.target) {
-			case CORE_ENTRY__MARCH__X86_64:
-				core->thread_info->tls = (void*) item->tls;
+			case CORE_ENTRY__MARCH__X86_64: {
+				int i;
+				for (i=0; i< core->thread_info->n_tls; i++) {
+					core->thread_info->tls[i]->entry_number = 12 +i; //12?
+					core->thread_info->tls[i]->base_addr = 0; // item->tls; ???
+					core->thread_info->tls[i]->limit = 0;
+					core->thread_info->tls[i]->seg_32bit = 0;
+					core->thread_info->tls[i]->contents_h = 0;
+					core->thread_info->tls[i]->contents_l = 0;
+					core->thread_info->tls[i]->read_exec_only = 1;
+					core->thread_info->tls[i]->limit_in_pages = 0;
+					core->thread_info->tls[i]->seg_not_present = 1;
+					core->thread_info->tls[i]->useable = 0;
+				}
 				break;
-			case CORE_ENTRY__MARCH__AARCH64:
+			}
+			case CORE_ENTRY__MARCH__AARCH64: {
 				core->ti_aarch64->tls = item->tls;
 				break;
+			}
 			default:
 				pr_err("Foreign architecture %d is unsupported\n", opts.target);
 				goto err_foreign_arch;
@@ -898,7 +912,6 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 	//NOTE: not called
 	/**********************************************************************************/
 	//experimental code for Popcorn (instead of using crit)
-	timing_start(TIME_TRANSFORM);
 	if (opts.target != CORE_ENTRY__MARCH) {
 		core->mtype = opts.target;
 		switch (opts.target) {
@@ -918,7 +931,6 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 		CORE_THREAD_ARCH_INFO(core) = 0; 
 	}
 err_foreign_arch:
-	timing_stop(TIME_TRANSFORM);
 	/**********************************************************************************/
 
 	img = open_image(CR_FD_CORE, O_DUMP, tid->ns[0].virt);
@@ -1308,7 +1320,7 @@ static int dump_one_task(struct pstree_item *item, InventoryEntry *parent_ie)
 
 	/*****************************************************************************/
 	/* the following is experimental -- Antonio TODO*/
-	timing_start(TIME_TRANSFORM);
+	// TODO add copyright header to this file and also parse-symbol.c 0x81fd
 	if (opts.target != CORE_ENTRY__MARCH) {
 		// Maybe there is a better way than this to get the executable
 		int fd = open_proc_path(pid, "exe");
@@ -1362,7 +1374,6 @@ out_foreign_arch:
 		close(fd);
 	}
 err_foreign_arch:
-	timing_stop(TIME_TRANSFORM);
 /*****************************************************************************/
 	
 	ret = collect_mappings(pid, &vmas, dump_filemap);

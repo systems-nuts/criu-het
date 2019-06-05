@@ -6,7 +6,7 @@
 
 
 // identity mapping :-)
-int get_task_regs_size_aarch64() {
+static inline int get_task_regs_size_aarch64() {
 	return 0;
 }
 static inline int save_task_regs_aarch64(void *x, unsigned long *values) {

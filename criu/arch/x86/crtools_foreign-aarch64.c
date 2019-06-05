@@ -32,6 +32,14 @@
 unsigned __page_size = 0;
 unsigned __page_shift = 0;
 
+
+#define POPCORN_REGS_aarch64 ((34+64) * sizeof(long))
+	
+int get_task_regs_size_aarch64() {
+	return POPCORN_REGS_aarch64;
+}
+
+
 // the way Popcorn saves them
 int save_task_regs_aarch64(void *x, unsigned long *values)
 {

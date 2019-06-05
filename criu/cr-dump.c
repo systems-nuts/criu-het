@@ -909,28 +909,44 @@ static int dump_task_thread(struct parasite_ctl *parasite_ctl,
 	}
 	pstree_insert_pid(tid);
 	
-	//NOTE: not called
+	//NOTE: not called during experiments
 	/**********************************************************************************/
 	//experimental code for Popcorn (instead of using crit)
+	timing_start(TIME_TRANSFORM);
 	if (opts.target != CORE_ENTRY__MARCH) {
 		core->mtype = opts.target;
 		switch (opts.target) {
-			case CORE_ENTRY__MARCH__X86_64:
-				core->thread_info->tls = (void*) item->tls;
+			case CORE_ENTRY__MARCH__X86_64: {
+				int i;
+				for (i=0; i< core->thread_info->n_tls; i++) {
+					core->thread_info->tls[i]->entry_number = 12 +i; //12?
+					core->thread_info->tls[i]->base_addr = 0; // item->tls; ???
+					core->thread_info->tls[i]->limit = 0;
+					core->thread_info->tls[i]->seg_32bit = 0;
+					core->thread_info->tls[i]->contents_h = 0;
+					core->thread_info->tls[i]->contents_l = 0;
+					core->thread_info->tls[i]->read_exec_only = 1;
+					core->thread_info->tls[i]->limit_in_pages = 0;
+					core->thread_info->tls[i]->seg_not_present = 1;
+					core->thread_info->tls[i]->useable = 0;
+				}
 				break;
-			case CORE_ENTRY__MARCH__AARCH64:
+			}
+			case CORE_ENTRY__MARCH__AARCH64: {
 				core->ti_aarch64->tls = item->tls;
 				break;
+			}
 			default:
 				pr_err("Foreign architecture %d is unsupported\n", opts.target);
 				goto err_foreign_arch;
 		}
 	
 		//remove the information about native registers (in this example x86)
-		arch_free_thread_info(core);
+		arch_free_thread_info(core); 
 		CORE_THREAD_ARCH_INFO(core) = 0; 
 	}
 err_foreign_arch:
+	timing_stop(TIME_TRANSFORM);
 	/**********************************************************************************/
 
 	img = open_image(CR_FD_CORE, O_DUMP, tid->ns[0].virt);

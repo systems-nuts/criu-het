@@ -21,11 +21,17 @@
 #define XSAVE_PB_NELEMS(__s, __obj, __member)		\
 	(sizeof(__s) / sizeof(*(__obj)->__member))
 
-int save_task_regs_x86_64(void *x, unsigned long * values)
+#define POPCORN_REGS_x86_64 ((2+16+8+(8*2)+(16*2)+4) * sizeof(long))
+	
+int get_task_regs_size_x86_64() {
+	return POPCORN_REGS_x86_64;
+}
+	
+int save_task_regs_x86_64(void *x, unsigned long * buffer)
 {
 	CoreEntry *core = x;
 	UserX86RegsEntry *gpregs;
-	unsigned long start = values;
+	unsigned long* values = buffer;
 
 	if (core)
 		gpregs = core->thread_info->gpregs;
@@ -90,12 +96,10 @@ int save_task_regs_x86_64(void *x, unsigned long * values)
 	values = (unsigned long*) ivalues;
 	gpregs->flags = *values++;
 	
-	
 	//reg_dict["fs_base"]=hex(int(src_info["clear_tid_addr"],16)-56) #"0x821460" // TODO
 	//reg_dict["gs_base"]="0x0"
 	
-	
-	printf("start 0x%lx end 0x%lx totoal %d\n", start, (unsigned long) values, (unsigned long) values -start);
+	BUG_ON(((unsigned long)values -(unsigned long)buffer) != get_task_regs_size_x86_64());
 	
 	return 0;
 }

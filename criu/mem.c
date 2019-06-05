@@ -628,7 +628,7 @@ int parasite_dump_pages_seized(struct pstree_item *item,
 			default:
 				pr_err("Foreign architecture %d is unsupported\n", opts.target);
 		}
-		printf("arch ti_size: %d ti_magic: 0x%lx\n", arch_ti_size, arch_ti_magic);
+		//printf("arch ti_size: %d ti_magic: 0x%lx\n", arch_ti_size, arch_ti_magic);
 	
 		// read the memory content of the process we want to checkpoint
 		char buff1[64];

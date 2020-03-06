@@ -2,6 +2,58 @@
 
 ## CRIUHET -- A project to implement checkpoint/restore functionality for Linux on heterogeneous-ISA platforms
 
+'criu-het' (het for heterogeneous) allows to create a checkpoint to an architecture that is different from the current one.
+Currently only aarch64 and x86\_64 are supported. Only binaries compiled witht the popcorn-compiler (branch criu) are supported.
+
+criu-het omes in two forms crit-in-criu (basically a patch to original CRIU binary) or heterogenous-simplified (a modification to CRIT). Additionally, criu-het includes scripts to simplify its usage: you can use criu-het -h to see the option added by criu-het, which is basically just one "--arch", the architecture to which your application will be restarted!
+
+To install criu-het refer to the INSTALL.md file.
+
+criu-het is based on CRIU (see below after the Example), and it was developed by Antonio Barbalace and Mohamed L. Karaoui.
+
+### Checkpoint/Restore Example (uses two bash windows):
+
+[Before using criu-het, it is highly recommanded to try a homogeneous (maybe on the same machine) checkpoint/restore using simply criu]
+
+Note: all criut-het commands may require root access ('sudo')
+
+checkpoint (dump):
+```
+#To run a popcorn process on needs a binary for all supported arch (popcorn_x86-64 and popcorn_aarch64)
+#In addition to the one of current arch (popcorn-hello: a copy of popcorn_x86-64)
+bash0 $ ls
+popcorn-hello popcorn-hello_x86-64 popccorn_aarch64
+# start popcorn-hello on bash0
+bash0 $ ./popcorn-hello
+
+
+# on bash1 we use ps to find the pid of popcorn-hello
+bash1 $ ps -C popcorn-hello
+...
+22851  pts/2  00:00 ./popcorn-hello
+# we checkpoint the given process
+bash1 $ criu-het dump --arch aarch64 -j -t 22851
+
+# The dump. In addition to the normal dump. One can find the dump of aarch64 in aarch64' folder.
+bash1 $ ls
+arch64/  core-22851.img  fdinfo-2.img  ... tty-info.img
+```
+
+Restore:
+```
+# before restoring, we cp the target file to the target architecture
+bash0 $ cp popcorn-hello_aarch64 popcorn-hello
+# Note: the above step is currently done by criu-het...
+
+bash1 $ #ssh to remote node
+bash1 $ #cd to the dump folder and into the 'aarch64' folder
+#Note: both systems are supposed to have the same filesystem
+#Otherwise one needed to copy the dump and the binaries (into the same paths)
+
+#Restoring the task on aarch64
+bash1 $ ciru-het restore -j
+```
+
 ## CRIU -- A project to implement checkpoint/restore functionality for Linux
 
 CRIU (stands for Checkpoint and Restore in Userspace) is a utility to checkpoint/restore Linux tasks.
@@ -24,9 +76,6 @@ Pages worth starting with are:
 - [A simple example of usage](http://criu.org/Simple_loop)
 - [Examples of more advanced usage](https://criu.org/Category:HOWTO)
 - Troubleshooting can be hard, some help can be found [here](https://criu.org/When_C/R_fails), [here](https://criu.org/What_cannot_be_checkpointed) and [here](https://criu.org/FAQ)
-
-### A video tour on basic CRIU features
-[![CRIU introduction](https://asciinema.org/a/7fnt2prsumvxiwf3ng61fgct3.png)](https://asciinema.org/a/7fnt2prsumvxiwf3ng61fgct3)
 
 ## Advanced features
 
@@ -71,59 +120,6 @@ Here are some useful hints to get involved.
 * If you're giving a talk about CRIU -- let us know, we'll mention it on the [wiki main page](https://criu.org/News/events);
 
 
-## CRIU-HET
-
-'criu-het' (het for heterogeneous) allows to create a checkpoint to an architecture that is different from the current host.
-Currently only aarch64 and x86\_64 are supported. Only binaries compiled witht the popcorn-compiler (branch criu) are supported.
-
-criu-het is simply a bash script that export a env variable before calling criu and then call crit (python script) with the "recode" command.
-One can use criu-het -h to see the option added by criu-het, which is "--arch".
-
-To install criu-het refer to the INSTALL.md file.
-
-
-### Checkpoint/Restore Example (uses two bash windows):
-
-[Before using criu-het, it is highly recommanded to try a homogeneous (maybe on the same machine) checkpoint/restore using simply criu]
-
-Note: all criut-het commands may require root access ('sudo')
-
-checkpoint (dump):
-```
-#To run a popcorn process on needs a binary for all supported arch (popcorn_x86-64 and popcorn_aarch64)
-#In addition to the one of current arch (popcorn-hello: a copy of popcorn_x86-64)
-bash0 $ ls
-popcorn-hello popcorn-hello_x86-64 popccorn_aarch64
-# start popcorn-hello on bash0
-bash0 $ ./popcorn-hello
-
-
-# on bash1 we use ps to find the pid of popcorn-hello
-bash1 $ ps -C popcorn-hello
-...
-22851  pts/2  00:00 ./popcorn-hello
-# we checkpoint the given process
-bash1 $ criu-het dump --arch aarch64 -j -t 22851
-
-# The dump. In addition to the normal dump. One can find the dump of aarch64 in aarch64' folder.
-bash1 $ ls
-arch64/  core-22851.img  fdinfo-2.img  ... tty-info.img
-```
-
-Restore:
-```
-# before restoring, we cp the target file to the target architecture
-bash0 $ cp popcorn-hello_aarch64 popcorn-hello
-# Note: the above step is currently done by criu-het...
-
-bash1 $ #ssh to remote node
-bash1 $ #cd to the dump folder and into the 'aarch64' folder
-#Note: both systems are supposed to have the same filesystem
-#Otherwise one needed to copy the dump and the binaries (into the same paths)
-
-#Restoring the task on aarch64
-bash1 $ ciru-het restore -j
-```
 
 ## Licence
 

@@ -12,7 +12,7 @@
 
 #define FP_XSTATE_MAGIC1		0x46505853U
 #define FP_XSTATE_MAGIC2		0x46505845U
-#define FP_XSTATE_MAGIC2_SIZE		sizeof(FP_XSTATE_MAGIC2)
+//#define FP_XSTATE_MAGIC2_SIZE		sizeof(FP_XSTATE_MAGIC2)
 
 #define XSTATE_FP			0x1
 #define XSTATE_SSE			0x2
@@ -271,7 +271,7 @@ typedef struct {
 
 	union {
 		struct xsave_struct	xsave;
-		uint8_t			__pad[sizeof(struct xsave_struct) + FP_XSTATE_MAGIC2_SIZE];
+		uint8_t			__pad[sizeof(struct xsave_struct) + sizeof(FP_XSTATE_MAGIC2)];
 	};
 
 	uint8_t has_fpu;
@@ -297,7 +297,7 @@ typedef struct {
 	} __packed fregs_state;
 	union {
 		struct xsave_struct_ia32	xsave;
-		uint8_t				__pad[sizeof(struct xsave_struct) + FP_XSTATE_MAGIC2_SIZE];
+		uint8_t				__pad[sizeof(struct xsave_struct) + sizeof(FP_XSTATE_MAGIC2)];
 	} __aligned(FXSAVE_ALIGN_BYTES) __packed;
 } __aligned(FXSAVE_ALIGN_BYTES) __packed fpu_state_ia32_t;
 

@@ -413,13 +413,13 @@ class Converter():
 	def get_target_core(self, arch, binary, pages_file, pagemap_file, core_file):
 		pass
 	@abstractmethod
-	def get_target_files(self, files_path, mm_file, path_append):
+	def get_target_files(self, files_path, mm_file, path_append, root_dir):
 		pass
 	@abstractmethod
 	def get_target_mem(self, mm_file, pagemap_file,  pages_file, dest_path):
 		pass
 
-	def __recode_pid(self, pid, arch, directory, outdir, onlyfiles, files_file, path_append):
+	def __recode_pid(self, pid, arch, directory, outdir, onlyfiles, files_file, path_append, root_dir):
 		time_start = time.time()
 		### To convert we need some files #TODO: use magic to identify the files?
 		#TODO: use dict!
@@ -446,13 +446,16 @@ class Converter():
 		
 		##get path to binary
 		binary=self.get_binary(files_file, mm_file, path_append)
+                tmp_root_dir = root_dir
+                tmp_root_dir += binary
+                binary = tmp_root_dir
 		het_log("path to binary", binary, path_append)
 		time_path = time.time()
 		
 		#convert core, fs, memory (vdso)
 		dest_core=self.get_target_core(arch, binary, pages_file, pagemap_file, core_file)
 		time_core = time.time()
-		dest_files=self.get_target_files(files_file, mm_file, path_append) #must be after get_target_core
+		dest_files=self.get_target_files(files_file, mm_file, path_append, root_dir) #must be after get_target_core
 		time_files = time.time()
 
 		bname=os.path.basename(pages_file)
@@ -493,11 +496,10 @@ class Converter():
 		print (pid, (time_path - time_start), (time_core - time_path), (time_files - time_core), (time_mem - time_files), (time_copy - time_mem))
 		return handled_files
 
-	def recode(self, arch, directory, outdir, path_append):
+	def recode(self, arch, directory, outdir, path_append, root_dir):
 		###Generate output directory
 		if not os.path.exists(outdir):
 			os.makedirs(outdir)
-		
 		rec_t0 =time.time()
 		onlyfiles = [f for f in listdir(directory) if (isfile(join(directory, f)) and "img" in f)]
 		pstree_file=None
@@ -514,10 +516,9 @@ class Converter():
 				copyfile(files_file_orig, files_file)
 		assert(pstree_file)
 		assert(files_file)
-		
 		rec_t1 =time.time()
 		for _pid in self.get_all_pids(pstree_file):
-			ret=self.__recode_pid(_pid, arch, directory, outdir, onlyfiles, files_file, path_append)
+			ret=self.__recode_pid(_pid, arch, directory, outdir, onlyfiles, files_file, path_append,root_dir)
 			handled_files.extend(ret)
 		
 		#copy not transformed files
@@ -717,9 +718,12 @@ class X8664Converter(Converter):
 		#het_log(dst_core['entries'][0]['thread_info'])
 		return dst_core
 
-	def get_target_files(self, files_path, mm_file, path_append):
+	def get_target_files(self, files_path, mm_file, path_append, root_dir):
 		files_img=self.load_image_file(files_path)
 		fid, idx, bin_path=self.get_binary_info(files_path, mm_file, path_append)
+                tmp_root_dir = root_dir
+                tmp_root_dir += bin_path
+                bin_path = tmp_root_dir
 		path_x86_64=bin_path+"_x86-64"
 		path_aarch64=bin_path+"_aarch64"
 		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))
@@ -972,9 +976,13 @@ class Aarch64Converter(Converter):
 		het_log("gtm", (gtm_t1 -gtm_t0), (gtm_t2 -gtm_t1), (gtm_t3 -gtm_t2), (gtm_t4 -gtm_t3), (gtm_t5 - gtm_t4), (gtm_t6 -gtm_t5))
 		return mm_img, pagemap_img, dest_path
 
-	def get_target_files(self, files_path, mm_file, path_append):
+	def get_target_files(self, files_path, mm_file, path_append, root_dir):
 		files_img=self.load_image_file(files_path)
 		fid, idx, bin_path=self.get_binary_info(files_path, mm_file, path_append)
+                tmp_root_dir = root_dir
+                tmp_root_dir += bin_path
+                bin_path = tmp_root_dir
+                print bin_path 
 		path_x86_64=bin_path+"_x86-64"
 		path_aarch64=bin_path+"_aarch64"
 		assert(os.path.isfile(path_x86_64) and os.path.isfile(path_aarch64))

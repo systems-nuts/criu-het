@@ -1,4 +1,4 @@
-[More information can be found on the Wiki](https://github.com/systems-nuts/criu-het/wiki)
+[More information can be found on the Wiki](../../wiki)
 
 <p align="center"><img src="http://www.popcornlinux.org/images/images/criuhet.png" width="256px"/></p>
 

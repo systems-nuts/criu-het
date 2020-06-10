@@ -1,3 +1,5 @@
+[More information can be found on the Wiki](https://github.com/systems-nuts/criu-het/wiki)
+
 <p align="center"><img src="http://www.popcornlinux.org/images/images/criuhet.png" width="256px"/></p>
 
 ## CRIUHET -- A project to implement checkpoint/restore functionality for Linux on heterogeneous-ISA platforms
